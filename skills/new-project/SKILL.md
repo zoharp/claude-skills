@@ -9,6 +9,15 @@ When starting a new project, collect the following information from the user, th
 
 ---
 
+## Templates
+Ready-made starting files live in the `claude-skills` repo under `templates/`:
+- `templates/CLAUDE.md` — default CLAUDE.md template
+- `templates/START_HERE.md` — quick start guide template
+
+Use these as the base. Copy them into the new project folder and fill in the placeholders.
+
+---
+
 ## Step 1 — Collect project details
 
 Ask the user for:
@@ -54,143 +63,21 @@ Ask the user for:
 
 ## Step 2 — Generate CLAUDE.md
 
-Use the collected info to produce a `CLAUDE.md` with this structure:
-
-```markdown
-# <Project Name> — Claude Code Instructions
-
-## Project type
-<e.g. SaaS + RAG>
-
-## Skills in use
-- **`deploy`** — git commit, push, deployment checklist
-- **`release-management`** — version bumping and release notes  <- only if versioning needed
-- **`<other-skills>`** — <description>
-
----
-
-## Release Management  <- only if project has versioned components
-Use the `release-management` skill after every code change.
-
-### Current versions
-- Backend: 1.0.0
-- Frontend: 1.0.0
-
----
-
-## Project
-<One sentence description>
-
-**Git repo:** <URL>
-
-## Tech Stack
-- **Backend:** <value>
-- **Frontend:** <value>
-- **Database:** <value>
-- **AI/LLM:** <value>
-
-## Deployment
-- **Frontend:** <e.g. Vercel — auto-deploys on push to main>
-- **Backend:** <e.g. GCP Cloud Run — via Cloud Build>
-- **Deploy:** run deploy.bat (Windows) or ./deploy.sh (Mac/Linux)
-
----
-
-## Project Structure
-<project-name>/
-├── CLAUDE.md
-├── .env                <- secrets (never commit)
-├── .env.example
-└── ...                 <- add structure as project grows
-
----
-
-## Environment Variables (.env)
-# Add required env vars here as they are defined
-
----
-
-## How to Run
-# Add run instructions as the project is set up
-```
+Start from `templates/CLAUDE.md` and fill in all placeholders with the collected info.
 
 ---
 
 ## Step 3 — Create supporting files
 
-After generating CLAUDE.md, also offer to create:
+Copy from `templates/` and also offer to create:
+- `START_HERE.md` — from `templates/START_HERE.md`, fill in project name and links
+- `deploy.bat` — copy from `claude-skills/templates/deploy.bat` (root of repo)
+- `deploy.sh` — copy from `claude-skills/templates/deploy.sh`
 - `.env.example` — template with all required env var keys (empty values)
-- `deploy.bat` — Windows deploy script
-- `deploy.sh` — Mac/Linux deploy script
 - `.gitignore` — with .env, node_modules, __pycache__, etc.
 - `README.md` — basic project readme
 
 ---
-
-## deploy.bat template
-```bat
-@echo off
-cd /d "%~dp0"
-
-set /p MSG="Commit message: "
-if "%MSG%"=="" (
-    echo No message provided, aborting.
-    exit /b 1
-)
-
-echo === Staging changes ===
-git add -A
-git status --short
-
-echo === Committing ===
-git commit -m "%MSG%"
-if errorlevel 1 (
-    echo Commit failed.
-    exit /b 1
-)
-
-echo === Pushing to GitHub ===
-git push
-if errorlevel 1 (
-    echo Push failed.
-    exit /b 1
-)
-
-echo === Done! Deployed successfully. ===
-pause
-```
-
-## deploy.sh template (Mac/Linux)
-```bash
-#!/bin/bash
-cd "$(dirname "$0")"
-
-read -p "Commit message: " MSG
-if [ -z "$MSG" ]; then
-  echo "No message provided, aborting."
-  exit 1
-fi
-
-echo "=== Staging changes ==="
-git add -A
-git status --short
-
-echo "=== Committing ==="
-git commit -m "$MSG"
-if [ $? -ne 0 ]; then
-  echo "Commit failed."
-  exit 1
-fi
-
-echo "=== Pushing to GitHub ==="
-git push
-if [ $? -ne 0 ]; then
-  echo "Push failed."
-  exit 1
-fi
-
-echo "=== Done! Deployed successfully. ==="
-```
 
 ## .gitignore template
 ```

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -c 'SKILLS_DIR=\"\"$HOME/.claude/skills\"\"; mkdir -p \"\"$SKILLS_DIR\"\"; for skill in skills/*/; do skill_name=$\\(basename \"\"$skill\"\"\\); if [ -f \"\"$skill/SKILL.md\"\" ]; then mkdir -p \"\"$SKILLS_DIR/$skill_name\"\"; cp -r \"\"$skill\"\"* \"\"$SKILLS_DIR/$skill_name/\"\" 2>/dev/null || true; echo \"\"Installed: $skill_name\"\"; fi; done')"
+    ]
+  }
+}
