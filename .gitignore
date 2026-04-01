@@ -5,3 +5,6 @@ secrets/
 *_secret*
 .DS_Store
 Thumbs.db
+.claude/
+run_claude.bat
+templates/
