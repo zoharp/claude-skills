@@ -52,73 +52,92 @@ Ask the user for:
 
 ---
 
-## Step 2 — Generate CLAUDE.md
+## Step 2 — Generate CLAUDE.md and system.md
 
-Use the collected info to produce a `CLAUDE.md` with this structure:
+Every new project needs **two** files. Copy `system.md` from the NEW_PROJECT template as-is — it does not change per project. Generate `CLAUDE.md` from the template below, filling in the project-specific details.
+
+### CLAUDE.md (project-specific)
 
 ```markdown
 # <Project Name> — Claude Code Instructions
 
-## Project type
-<e.g. SaaS + RAG>
-
-## Skills in use
-- **`deploy`** — git commit, push, deployment checklist
-- **`release-management`** — version bumping and release notes  <- only if versioning needed
-- **`<other-skills>`** — <description>
-
----
-
-## Release Management  <- only if project has versioned components
-Use the `release-management` skill after every code change.
-
-### Current versions
-- Backend: 1.0.0
-- Frontend: 1.0.0
+> System-level rules (deployment gate, skills, versioning, traceability) are in `system.md`.
+> This file contains only project-specific information.
 
 ---
 
 ## Project
+
 <One sentence description>
 
 **Git repo:** <URL>
 
+---
+
 ## Tech Stack
+
 - **Backend:** <value>
 - **Frontend:** <value>
 - **Database:** <value>
 - **AI/LLM:** <value>
 
+---
+
 ## Deployment
+
 - **Frontend:** <e.g. Vercel — auto-deploys on push to main>
 - **Backend:** <e.g. GCP Cloud Run — via Cloud Build>
-- **Deploy:** run deploy.bat (Windows) or ./deploy.sh (Mac/Linux)
+- **Deploy:** run `deploy.bat` (Windows) or `./deploy.sh` (Mac/Linux)
+
+---
+
+## Current versions
+
+- **Backend:** `1.0.0`
+- **Frontend:** `1.0.0`
 
 ---
 
 ## Project Structure
+
 <project-name>/
-├── CLAUDE.md
-├── .env                <- secrets (never commit)
-├── .env.example
-└── ...                 <- add structure as project grows
+├── CLAUDE.md               ← this file (project-specific)
+├── system.md               ← global Orcanos rules (shared across all projects)
+├── .env                    ← secrets (never commit)
+├── .env.example            ← template (keys only)
+├── .gitignore
+├── deploy.bat
+├── run.bat
+└── ...                     ← add structure as project grows
 
 ---
 
-## Environment Variables (.env)
+## Environment Variables (`.env`)
+
 # Add required env vars here as they are defined
 
 ---
 
 ## How to Run
+
 # Add run instructions as the project is set up
+
+---
+
+## Common Issues
+
+<!-- Add project-specific troubleshooting here -->
 ```
+
+### system.md
+
+Copy this file verbatim from `C:\AI Projects\NEW_PROJECT\system.md`. It is shared across all Orcanos projects and should not be edited per project.
 
 ---
 
 ## Step 3 — Create supporting files
 
-After generating CLAUDE.md, also offer to create:
+After generating CLAUDE.md and system.md, also offer to create:
 - `.env.example` — template with all required env var keys (empty values)
 - `deploy.bat` — Windows deploy script
 - `deploy.sh` — Mac/Linux deploy script

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "TC-00-A",
+    "group": "Connectivity",
+    "title": "Backend health check",
+    "description": "GET /health must return HTTP 200.",
+    "prompt": null,
+    "endpoint": "/health",
+    "method": "GET",
+    "expected": { "http_status": 200 },
+    "tags": ["sanity", "no-llm"]
+  },
+  {
+    "id": "TC-00-B",
+    "group": "Connectivity",
+    "title": "Documents endpoint returns list",
+    "description": "GET /documents must return a non-empty array of indexed documents.",
+    "prompt": null,
+    "endpoint": "/documents",
+    "method": "GET",
+    "expected": { "http_status": 200, "result_min_count": 1 },
+    "tags": ["sanity", "no-llm"]
+  },
+  {
+    "id": "TC-01-A",
+    "group": "General Queries",
+    "title": "Basic question answered",
+    "description": "POST /query with a general question must return HTTP 200 and a non-empty answer.",
+    "prompt": "What is the purpose of this system?",
+    "endpoint": "/query",
+    "method": "POST",
+    "expected": { "http_status": 200, "answer_min_length": 50 },
+    "tags": ["rag"]
+  },
+  {
+    "id": "TC-05-A",
+    "group": "Edge Cases",
+    "title": "Empty query rejected",
+    "description": "POST /query with an empty string must not crash the backend.",
+    "prompt": "",
+    "endpoint": "/query",
+    "method": "POST",
+    "expected": { "http_status_not": 500 },
+    "tags": ["edge-case"]
+  }
+]
