@@ -1,111 +1,97 @@
-# Orcanos QMS — Claude Code Instructions
+# Claude Skills Repository
 
-## Skills in use
-This project uses the following global skills (from `~/.claude/skills/`):
-- **`release-management`** — version bumping rules and release_notes.json updates
-- **`orcanos-rag-architecture`** — RAG pipeline, router, chunking, retrieval, ETL
-- **`supabase-patterns`** — auth, pgvector, live settings, multi-tenant patterns
-- **`gcp-deployment`** — Cloud Run, Cloud Build, Vercel, secrets handling
-- **`fastapi-streaming`** — NDJSON streaming, React fetch consumer, module testing
-
----
-
-## Release Management — MANDATORY
-After every code change, use the `release-management` skill.
-
-### Current versions (update after every bump)
-- **Backend:** `2.6.3`
-- **Frontend:** `1.7.0`
+A collection of reusable Claude Code skills. Each skill is a folder containing a `SKILL.md` file that Claude Code auto-invokes based on task context.
 
 ---
 
 ## Project Goal
-Multi-tenant, multi-standard compliance QMS powered by RAG (Retrieval-Augmented Generation):
-1. Manages multiple **repositories** of ISO compliance documents (ISO 27001, 13485, 14971)
-2. Indexes documents from **Google Drive** with automatic chunking, summarization, metadata extraction, and vector embedding
-3. Answers natural language questions about compliance documents via a 2-stage routing pipeline + hybrid search
-4. Identifies **coverage gaps** — which ISO clauses are not covered by documents
-5. Supports **multi-user** access with role-based permissions (owner/editor/viewer)
-6. Tracks **token costs** and query analytics
 
-## Tech Stack
-- **Python 3.11+**
-- **OpenAI API** — embeddings (`text-embedding-3-small`) + GPT-4o for routing and answers
-- **Supabase** — pgvector storage, vector search, auth, settings, conversations
-- **FastAPI** — local API server (streaming NDJSON responses)
-- **React + Vite** — chat UI with conversation history, sources, token/cost tracking
-
-> **Full DB schema (all tables, indexes, RPC functions):** see [`SCHEMA.md`](./SCHEMA.md)
+Maintain and publish a library of Claude Code skills that other users can install into their own projects. Skills are self-contained — each folder holds everything Claude needs to understand when and how to apply that skill.
 
 ---
 
-## Project Structure
+## Structure
 
 ```
-orcanos-qms/
-├── CLAUDE.md               ← this file
-├── SCHEMA.md               ← full Supabase SQL schema
-├── .env                    ← secrets (never commit)
-├── .env.example            ← template
-├── requirements.txt
-├── Dockerfile
-├── cloudbuild.yaml
-├── deploy.bat
-├── docs/                   ← put PDF/DOCX files here (local indexing)
-├── backend/
-│   ├── config.py           ← env-based config constants
-│   ├── settings.py         ← live settings from rag_settings table
-│   ├── auth.py             ← JWT authentication middleware
-│   ├── embeddings.py       ← OpenAI embedding wrapper
-│   ├── chunker.py          ← PDF/DOCX → chunks
-│   ├── gdrive.py           ← Google Drive integration
-│   ├── supabase_client.py  ← all DB operations
-│   ├── summarizer.py       ← AI doc summary + metadata extraction
-│   ├── etl.py              ← orchestrate indexing pipeline
-│   ├── router.py           ← 2-stage query routing
-│   ├── rag.py              ← streaming RAG pipeline
-│   └── api.py              ← FastAPI: 30+ endpoints
-└── frontend/
-    ├── src/
-    │   ├── App.jsx                  ← main chat UI
-    │   ├── Auth.jsx                 ← Supabase Google Sign-In
-    │   ├── Settings.jsx             ← settings panel
-    │   ├── AdminPanel.jsx           ← admin: users, analytics, settings
-    │   ├── DebugPanel.jsx           ← debug info overlay
-    │   ├── ThinkingPanel.jsx        ← live step-by-step pipeline status
-    │   ├── ChatHistory.jsx          ← sidebar: conversations + repo switcher
-    │   ├── RepositoryDetail.jsx     ← repo mgmt tabs
-    │   ├── MarketplaceModal.jsx     ← browse and import skills from GitHub
-    │   ├── ReleaseNotes.jsx         ← in-app release notes panel
-    │   └── companyDetailsTemplate.js
-    └── ...
+claude-skills/
+├── CLAUDE.md           ← this file
+├── README.md           ← user-facing install and usage docs
+├── install.bat         ← Windows installer
+├── install.sh          ← Mac/Linux installer
+├── templates/          ← project templates (CLAUDE.md, deploy scripts)
+└── skills/
+    ├── deploy/
+    ├── fastapi-streaming/
+    ├── gcp-deployment/
+    ├── new-project/
+    ├── orcanos-rag-architecture/
+    ├── release-management/
+    ├── req-create/
+    ├── req-gap-check/
+    ├── req-status/
+    ├── req-trace/
+    └── supabase-patterns/
 ```
+
+Each skill folder contains exactly one file: `SKILL.md`.
 
 ---
 
-## Environment Variables (`.env`)
+## Skill File Format
 
-```
-OPENAI_API_KEY=sk-...
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_SERVICE_KEY=...
-SUPABASE_JWT_SECRET=...
-AUTH_DISABLED=false
-DOCS_FOLDER=./docs
-EMBED_MODEL=text-embedding-3-small
-CHAT_MODEL=gpt-4o
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=200
-TOP_K=5
+```markdown
+---
+name: skill-name
+description: When Claude should auto-invoke this skill
+---
+
+# Skill content here
 ```
 
-> Fallback defaults only. `rag_settings` DB values take precedence at runtime.
+The `description` field is the trigger — Claude reads it to decide when to auto-invoke the skill. Make it specific and action-oriented.
 
 ---
 
-## One-time Setup
-1. Set `.env` with all keys above
-2. Run all SQL from `SCHEMA.md` in Supabase SQL editor
-3. Create a user in the `users` table
-4. Add PDF/DOCX files to `docs/` OR connect a Google Drive folder via a repository
-5. `POST http://localhost:8000/index` or use the Index button in the UI
+## Adding a New Skill
+
+1. Create the folder: `skills/my-new-skill/`
+2. Add `SKILL.md` with YAML frontmatter + instructions
+3. Run `install.bat` (Windows) or `./install.sh` (Mac/Linux) to copy it to `~/.claude/skills/`
+4. Run `/reload-plugins` in Claude Code to pick it up
+5. Commit and push
+
+---
+
+## Installing Skills (for end users)
+
+**Windows:**
+```bat
+install.bat              # install all skills
+install.bat deploy       # install one skill
+```
+
+**Mac/Linux:**
+```bash
+./install.sh             # install all skills
+./install.sh deploy      # install one skill
+```
+
+Skills are copied to `~/.claude/skills/` (Mac/Linux) or `%USERPROFILE%\.claude\skills\` (Windows).
+
+---
+
+## Current Skills
+
+| Skill | Description |
+|---|---|
+| `deploy` | Git commit, push, Cloud Build deployment |
+| `fastapi-streaming` | NDJSON streaming, React fetch consumer |
+| `gcp-deployment` | Cloud Run, Cloud Build, Vercel, GCP secrets |
+| `new-project` | Collect project details and generate CLAUDE.md |
+| `orcanos-rag-architecture` | RAG pipeline, 2-stage router, chunking, ETL |
+| `release-management` | Version bumping, release_notes.json updates |
+| `req-create` | Create IEC 62304 software requirements |
+| `req-gap-check` | Scan source files for missing requirement links |
+| `req-status` | Compliance status dashboard |
+| `req-trace` | Trace files/functions to requirements |
+| `supabase-patterns` | Auth, pgvector, RLS, live settings |

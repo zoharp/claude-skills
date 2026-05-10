@@ -52,13 +52,34 @@ All DB operations centralized here:
 - `search_chunks_hybrid()` — hybrid vector + FTS search
 - `search_documents_by_name()` — router name search RPC
 
+### Per-request URL/key routing (multi-account)
+`supabase_client.py` does NOT use module-level `SUPABASE_REST_URL` / `HEADERS` constants inside functions. Instead it uses three private functions:
+```python
+_rest_url()    # reads _ctx_vector_db ContextVar → falls back to SUPABASE_URL
+_headers()     # reads _ctx_vector_db ContextVar → falls back to SUPABASE_SERVICE_KEY
+_headers_min() # same but Prefer: return=minimal
+```
+These are set by `account_middleware` in `api.py` on every request, based on the `X-Account` header.
+
+**Never add new functions that use `SUPABASE_REST_URL` or `HEADERS` directly** — always use `_rest_url()` / `_headers()` so multi-tenant routing works.
+
+---
+
+## Multi-Account Architecture
+- Each customer account has its own Supabase (vector DB) stored in the `accounts` table
+- The platform Supabase (from `.env`) stores accounts, users, LLM keys, and settings
+- Per-request routing via `_ctx_vector_db` ContextVar in `account_keys.py`
+- `get_vector_db_connection()` → returns `(url, service_key)` for current request
+- All passwords encrypted AES-256-GCM (`ENCRYPTION_KEY` env var)
+
 ---
 
 ## Environment Variables
 ```
-SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_URL=https://xxx.supabase.co       # platform Supabase (accounts, users, settings)
 SUPABASE_SERVICE_KEY=...
-SUPABASE_JWT_SECRET=...   # for local JWT verification
+SUPABASE_JWT_SECRET=...                    # for local JWT verification
+ENCRYPTION_KEY=<base64-encoded 32 bytes>   # AES-256-GCM for password encryption
 ```
 
 > Never commit these. Use substitution variables in Cloud Build trigger for production.
