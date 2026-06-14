@@ -153,5 +153,4 @@ async function login(username, password) {
 ---
 
 ## See also
-- [Router & Auth Patterns](SKILL.md) — Base URL, CORS, common patterns
-- [QW_Get_Filter_Results](qw-get-filter-results.md) — Fetch items from a filter
+- [Main Skill](SKILL.md) — Base URL, auth, common patterns

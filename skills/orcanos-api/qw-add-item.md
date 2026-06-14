@@ -108,4 +108,3 @@ async function addItem({
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - [QW_Login](qw-login.md) — Authenticate and get project version IDs
-- [QW_Add_Trace](qw-add-trace.md) — Link items for traceability

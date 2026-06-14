@@ -274,5 +274,5 @@ async function fetchItems({
 ---
 
 ## See also
-- [Router & Auth Patterns](SKILL.md) — Base URL, CORS, common patterns
+- [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - [QW_Login](qw-login.md) — Authenticate and fetch projects/versions

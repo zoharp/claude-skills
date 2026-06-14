@@ -1,14 +1,32 @@
-# QW_Add_Trace — Create Traceability Link
+# QW_AddRelation — Create Traceability Link
 
 ## Endpoint
 
 ```
-POST <base>api/v2/Json/QW_Add_Trace
-Authorization: Basic <base64(username:password)> OR Bearer <api-key>
+POST <base>/v2/Json/QW_AddRelation
 Content-Type: application/json
+Authorization: Bearer <api-key> OR Basic <base64(username:password)>
+OrcanosAPIKey: <api-key>  (alternative header)
 ```
 
-**Auth:** See [main skill](SKILL.md) for Basic Auth and API Key options.
+**Auth:** See [main skill](SKILL.md) for auth options. Requires either `Authorization` header or `OrcanosAPIKey` header.
+
+---
+
+## ⚠️ CRITICAL: Original Code, Not Custom Code
+
+**IMPORTANT:** Always use the **original work item code**, never the custom code.
+
+**Example:**
+- Item displays as: `ECO-30829`
+  - `ECO` = custom code (do NOT use this)
+  - `CR` = original code (use THIS)
+  - Correct API call: `"SourceIdKeys": "CR-30829"`
+  
+- Another example: `DMS-23175`
+  - `DMS` = custom code (do NOT use this)
+  - Original code = use the actual original prefix (use THIS)
+  - Correct API call: `"SourceIdKeys": "ORIG-23175"` (replace ORIG with actual original code)
 
 ---
 
@@ -16,59 +34,49 @@ Content-Type: application/json
 
 ```json
 {
-  "Source_Item_Id": "9876",
-  "Target_Item_Id": "5432",
-  "Link_Type": "Implements",
-  "Version_id": 438
+  "SourceIdKeys": "CR-12345",
+  "TargetIdKeys": "CR-67890",
+  "RelationType": "Implements",
+  "Comments": "Implementation link"
 }
 ```
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `Source_Item_Id` | string | **Yes** | Source work item ID (e.g. requirement) |
-| `Target_Item_Id` | string | **Yes** | Target work item ID (e.g. implementation) |
-| `Link_Type` | string | No | Traceability relationship (Implements, Tests, Verifies, etc.) Default: "Links" |
-| `Version_id` | int | **Yes** | Project version from `QW_Login` |
+| `SourceIdKeys` | string | **Yes** | Source work item **original code key** — e.g. `CR-30829` (NOT custom code like `ECO-30829`, and NOT numeric ID) |
+| `TargetIdKeys` | string | **Yes** | Target work item **original code key** — e.g. `DMS-23175` (NOT custom code like `ECO-30829`, and NOT numeric ID) |
+| `RelationType` | string | No | Relation type designation (check your Orcanos config for valid values) |
+| `Comments` | string | No | Additional comments for the relation |
 
 ---
 
-## Link Types
-
-Common traceability relationships:
-
-| Link Type | Meaning | Use Case |
-|---|---|---|
-| `Implements` | Code implements requirement | REQ → source file/function |
-| `Tests` | Test case validates requirement | REQ → test case |
-| `Verifies` | Test verifies requirement compliance | TC → REQ |
-| `Calls` | Function calls another function | Function A → Function B |
-| `Links` | Generic bidirectional link | Default fallback |
-
-Check your Orcanos instance for available link types.
-
----
-
-## Success Response
+## Success Response (HTTP 200)
 
 ```json
 {
   "IsSuccess": true,
-  "Data": {
-    "Message": "Traceability link created successfully"
-  }
+  "Data": "Relation added successfully.",
+  "Message": "",
+  "HttpCode": 200
 }
 ```
 
 ---
 
-## Failure Responses
+## Error Response (HTTP 500)
 
-| HTTP | Meaning | Fix |
-|---|---|---|
-| `401` | Session expired | Re-authenticate via `QW_Login` |
-| `200` + `IsSuccess: false` | Link failed | Check source/target IDs exist, validate `Link_Type` |
-| Invalid item ID | Source or target not found | Verify IDs from `QW_Get_Filter_Results` |
-| Duplicate link | Link already exists | Check before creating (no error, just idempotent) |
+```json
+{
+  "IsSuccess": false,
+  "Data": {
+    "ErrorStatus": 0,
+    "ErrorInfo": "string",
+    "ErrorTrace": "string"
+  },
+  "Message": "string",
+  "HttpCode": 500
+}
+```
 
 ---
 
@@ -77,21 +85,21 @@ Check your Orcanos instance for available link types.
 ```js
 const BASE = '/api/orcanos/';
 
-async function addTrace({
-  sourceItemId,
-  targetItemId,
-  linkType = 'Implements',
-  versionId
+async function addRelation({
+  sourceIdKeys,
+  targetIdKeys,
+  relationType,
+  comments
 }) {
   const auth = sessionStorage.getItem('auth');
   const body = {
-    Source_Item_Id: sourceItemId,
-    Target_Item_Id: targetItemId,
-    Link_Type: linkType,
-    Version_id: versionId
+    SourceIdKeys: sourceIdKeys,
+    TargetIdKeys: targetIdKeys,
+    RelationType: relationType,
+    Comments: comments
   };
 
-  const r = await fetch(BASE + 'add-trace', {
+  const r = await fetch(BASE + 'add-relation', {
     method: 'POST',
     headers: {
       Authorization: auth,
@@ -100,23 +108,15 @@ async function addTrace({
     body: JSON.stringify(body)
   });
 
-  if (r.status === 401) throw new Error('Session expired');
   const data = await r.json();
-  if (!data.IsSuccess) throw new Error(data.Message || 'Add trace failed');
+  if (!data.IsSuccess) throw new Error(data.Message || 'Add relation failed');
 
-  return data.Data;
+  return data;
 }
 ```
 
 ---
 
-## Idempotency
-
-Creating a duplicate link may fail or be ignored depending on Orcanos version. Best practice: check if the link exists before creating.
-
----
-
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
-- [QW_Get_Filter_Results](qw-get-filter-results.md) — Query items and extract IDs
-- [QW_Add_Item](qw-add-item.md) — Create work items
+- [QW_Login](qw-login.md) — Authenticate and get session/API key
