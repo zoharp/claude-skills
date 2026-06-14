@@ -3,7 +3,10 @@ name: req-create
 description: Create an IEC 62304 software requirement from a feature description or code change.
 ---
 
-# req-create
+# req-create — IEC 62304 Requirement Creation
+
+**Business logic:** Creates compliant IEC 62304 software requirements locally.  
+**Technical sync:** See [orcanos-api QW_Add_Item](../orcanos-api/qw-add-item.md) for syncing requirements to Orcanos.
 
 ## When to use
 - When a developer has built something new and needs a formal IEC 62304 requirement created for it.
@@ -24,7 +27,8 @@ description: Create an IEC 62304 software requirement from a feature description
    - `verification_method`: specific — name the test type and what it asserts
 4. Write the REQ-NNN.md file to `/requirements/` using the format in any existing REQ file as template
 5. Add the entry to `_index.json`
-6. Report: REQ ID created, Orcanos sync will happen on next deploy
+6. **Sync to Orcanos** (if configured): Use [QW_Add_Item](../orcanos-api/qw-add-item.md) to create the requirement item in Orcanos
+7. Report: REQ ID created, traceability established
 
 ## Do not
 - Create a requirement for trivial changes (config tweaks, style fixes, logging)

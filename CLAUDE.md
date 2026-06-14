@@ -82,16 +82,30 @@ Skills are copied to `~/.claude/skills/` (Mac/Linux) or `%USERPROFILE%\.claude\s
 
 ## Current Skills
 
+### Code & Deployment
 | Skill | Description |
 |---|---|
+| `code-review` | Efficient PR review — correctness, regressions, security, edge cases |
 | `deploy` | Git commit, push, Cloud Build deployment |
 | `fastapi-streaming` | NDJSON streaming, React fetch consumer |
 | `gcp-deployment` | Cloud Run, Cloud Build, Vercel, GCP secrets |
+| `implementation-plan-review` | Review implementation plans — safety, dependency sequencing, readiness |
+| `spec-review` | Technical spec review — API consistency, migrations, architecture gaps |
+
+### Project & Requirement Management
+| Skill | Description |
+|---|---|
 | `new-project` | Collect project details and generate CLAUDE.md |
-| `orcanos-rag-architecture` | RAG pipeline, 2-stage router, chunking, ETL |
-| `release-management` | Version bumping, release_notes.json updates |
 | `req-create` | Create IEC 62304 software requirements |
 | `req-gap-check` | Scan source files for missing requirement links |
 | `req-status` | Compliance status dashboard |
 | `req-trace` | Trace files/functions to requirements |
+| `release-management` | Version bumping, release_notes.json updates |
+
+### Architecture & Patterns
+| Skill | Description |
+|---|---|
+| `orcanos-api` | Orcanos REST API — 100+ endpoint docs, auth, CORS/proxy patterns. See folder for individual API files (qw-login.md, qw-get-filter-results.md, etc.) |
+| `orcanos-rag-architecture` | RAG pipeline, 2-stage router, chunking, ETL |
+| `orcanos-test-automation` | Test automation patterns |
 | `supabase-patterns` | Auth, pgvector, RLS, live settings |

@@ -3,7 +3,10 @@ name: req-trace
 description: Trace a source file or function to its linked requirements, and identify gaps.
 ---
 
-# req-trace
+# req-trace — Requirement Traceability Analysis
+
+**Business logic:** Traces source code to requirements, identifies gaps.  
+**Technical sync:** See [orcanos-api QW_Add_Trace](../orcanos-api/qw-add-trace.md) for syncing traceability to Orcanos.
 
 ## When to use
 - **Automatically** after every code change to `backend/` or `frontend/src/` — run on each modified file before the task is considered done.
@@ -20,6 +23,11 @@ description: Trace a source file or function to its linked requirements, and ide
    - **Existing traceability** — table of REQ ID | title | symbol traced
    - **Gaps** — untraced symbols with suggested action (extend existing REQ or create new)
    - **Recommended actions** — ordered list of what to do next
+6. **Sync to Orcanos** (if configured): Use [QW_Add_Trace](../orcanos-api/qw-add-trace.md) to create traceability links in Orcanos
 
 ## Output format
 Markdown report. Be specific about symbol names — not just "the file" but the actual function.
+
+## See also
+- [[req-create]] — Create IEC 62304 requirements (business logic)
+- [QW_Add_Trace](../orcanos-api/qw-add-trace.md) — Technical API call to sync traceability to Orcanos
