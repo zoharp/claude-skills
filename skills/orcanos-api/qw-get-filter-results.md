@@ -16,27 +16,33 @@ Content-Type: application/json
 
 ```json
 {
-  "Filter_id": 123,
-  "Page_no": 1,
-  "Page_Size": 50,
-  "Item_Type": "REQ",
-  "Version_id": 438,
-  "Filter_By": "[Obj_name] LIKE '%widget%'",
-  "IsNewPaging": 0,
-  "IsReturnPageCount": "yes"
+  "Filter_id": "839",
+  "Page_no": "1",
+  "Page_Size": "50",
+  "Item_Type": "MR_REQ",
+  "Version_id": "434",
+  "Filter_By": "",
+  "Order_By": "",
+  "IsNewPaging": "1",
+  "IsReturnPageCount": "0",
+  "DashboardItemId": "0",
+  "IncludeProtectedCol": "true"
 }
 ```
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `Filter_id` | int | **Yes** | Saved filter ID from Orcanos UI |
-| `Page_no` | int | No | 1-based page number (default: 1) |
-| `Page_Size` | int | No | Items per page (default: 50) |
-| `Item_Type` | string | No | See Item Types table below |
-| `Version_id` | int | No | Project version ID from `QW_Login` |
+| `Filter_id` | string | **Yes** | Saved filter ID from Orcanos UI |
+| `Page_no` | string | No | 1-based page number (default: "1") |
+| `Page_Size` | string | No | Items per page (default: "50") |
+| `Item_Type` | string | No | REQ, TC, DEF, etc. See Item Types table below |
+| `Version_id` | string | No | Project version ID from `QW_Login` |
 | `Filter_By` | string | No | SQL WHERE fragment (appended to filter's WHERE) |
-| `IsNewPaging` | int | No | Use `0` (default: 0, use 1 is broken) |
-| `IsReturnPageCount` | string\|int | No | Use `"yes"` string for truthful total (NOT numeric 1) |
+| `Order_By` | string | No | SQL ORDER BY clause |
+| `IsNewPaging` | string | No | Use `"1"` for pagination support |
+| `IsReturnPageCount` | string | No | Use `"0"` for data rows. Use `"1"` to get filter column metadata only |
+| `DashboardItemId` | string | No | Dashboard context (optional) |
+| `IncludeProtectedCol` | string | No | Include protected columns in response |
 
 ---
 
@@ -186,23 +192,24 @@ ID IN (select * from dbo.fn_GetRootParentByCS21('39382'))
 
 ---
 
-## Pagination gotchas
+## Pagination & Return Types
 
-**`IsNewPaging` and `IsReturnPageCount` are finicky. Use these exact values:**
+**Critical:** `IsNewPaging` and `IsReturnPageCount` control what data is returned:
 
+| `IsReturnPageCount` | Effect | Use Case |
+|---|---|---|
+| `"0"` (string) | Returns actual work item rows with field values | Normal queries — fetch items |
+| `"1"` (string) | Returns **filter column metadata only** — no item data | Get column definitions, not rows |
+
+**Use these settings for normal item queries:**
 ```json
 {
-  "IsNewPaging": 0,
-  "IsReturnPageCount": "yes"
+  "IsNewPaging": "1",
+  "IsReturnPageCount": "0"
 }
 ```
 
-| Config | Effect | Warning |
-|---|---|---|
-| `IsReturnPageCount: "yes"` | Truthful `Total_records` | Must be **string**, not numeric |
-| `IsReturnPageCount: 1` (numeric) | Returns `Data: ""` (empty) | **BROKEN** — use `"yes"` |
-| `IsNewPaging: 1` | `Total_records` echoes `Page_Size` | Don't use — always use 0 |
-| `IsReturnPageCount: 0` | `Total_records` unreliable | Use `rows.length >= pageSize` as "has more" |
+**Important:** If `IsReturnPageCount` is `"1"`, the response contains only column metadata (field names, types, order). Use this to understand the filter structure, not to fetch items. Switch to `"0"` to get actual work item data.
 
 ---
 
@@ -231,13 +238,14 @@ async function fetchItems({
 }) {
   const auth = sessionStorage.getItem('auth');
   const body = {
-    Filter_id: filterId,
-    Page_no: page,
-    Page_Size: pageSize,
+    Filter_id: String(filterId),
+    Page_no: String(page),
+    Page_Size: String(pageSize),
     Item_Type: itemType,
-    Version_id: versionId,
-    IsNewPaging: 0,
-    IsReturnPageCount: 'yes'  // string!
+    Version_id: String(versionId),
+    Filter_By: filterBy,
+    IsNewPaging: '1',          // string: enable pagination
+    IsReturnPageCount: '0'     // string: get item data (not column metadata)
   };
   if (filterBy) body.Filter_By = filterBy;
 
