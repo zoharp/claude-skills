@@ -6,7 +6,9 @@ description: Trace a source file or function to its linked requirements, and ide
 # req-trace
 
 ## When to use
-After adding or refactoring code, to check what requirements cover it and whether any traceability links are missing.
+- **Automatically** after every code change to `backend/` or `frontend/src/` — run on each modified file before the task is considered done.
+- After adding or refactoring code, to check what requirements cover it and whether any traceability links are missing.
+- When a REQ REMINDER is shown by the Stop hook.
 
 ## What to do
 

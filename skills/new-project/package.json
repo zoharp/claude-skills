@@ -1,0 +1,21 @@
+{
+  "name": "new-project-skill",
+  "version": "1.0.0",
+  "description": "Orcanos skill to create, code, test and deploy new projects end-to-end",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "new-project": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "orcanos",
+    "skill",
+    "project-creation",
+    "automation"
+  ],
+  "author": "Zohar P",
+  "license": "MIT"
+}

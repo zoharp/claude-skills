@@ -6,7 +6,9 @@ description: Create an IEC 62304 software requirement from a feature description
 # req-create
 
 ## When to use
-When a developer has built something new and needs a formal IEC 62304 requirement created for it.
+- When a developer has built something new and needs a formal IEC 62304 requirement created for it.
+- **Automatically** after any code change to `backend/` or `frontend/src/` that adds new functionality, a new endpoint, a new component, or changes system behavior in a meaningful way.
+- When /req-trace reports a gap (untraced symbol with no linked REQ).
 
 ## What to do
 
