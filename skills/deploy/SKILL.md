@@ -1,7 +1,7 @@
 ---
 name: deploy
 description: Use when deploying code to GitHub, triggering Cloud Build, or pushing releases. Handles git commit, push, and deployment verification. Invoke when asked to deploy, release, push, or ship code.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Deploy

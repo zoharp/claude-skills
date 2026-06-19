@@ -2,7 +2,7 @@
 name: pr-review
 description: Efficient senior-level PR/code review focused on correctness, regressions, edge cases, maintainability, security, and production risk. Reviews changed code and directly impacted areas only. Avoids low-value style nitpicks and unrelated architecture criticism.
 license: MIT
-revision: 1.0
+revision: 1.0.0
 ---
 
 # PR Review Skill

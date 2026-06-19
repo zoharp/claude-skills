@@ -1,7 +1,7 @@
 ---
 name: supabase-patterns
 description: Use when working with Supabase auth, pgvector, RLS, settings tables, or JWT verification. Covers Orcanos-specific Supabase patterns including allowlist auth, live settings, and vector search.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Supabase Patterns

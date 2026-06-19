@@ -1,7 +1,7 @@
 ---
 name: release-management
 description: Use after every code change that requires version bumping or release notes. Handles versioning rules, release_notes.json updates, CLAUDE.md version tracking, and SCHEMA.md sync. Invoke when committing, releasing, or asked about versioning.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Release Management

@@ -2,7 +2,7 @@
 name: spec-review
 description: High-signal review of technical specifications. Focuses on breaking risks, schema/API consistency, migration safety, frontend/backend alignment, architectural gaps, and implementation feasibility. Use for backend specs, APIs, database changes, architecture designs, migrations, and multi-layer system changes.
 license: MIT
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Spec Review Skill

@@ -1,7 +1,7 @@
 ---
 name: orcanos-test-automation
 description: Use when setting up or running the test automation infrastructure for any Orcanos project. Covers pytest project layout, conftest.py patterns, run_tests.py (spin up test backend + run pytest + generate HTML report), and JSON-driven test definitions. Extracted from the Orcanos QMS test suite.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Orcanos Test Automation

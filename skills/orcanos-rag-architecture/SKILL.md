@@ -1,7 +1,7 @@
 ﻿---
 name: orcanos-rag-architecture
 description: Use when working on the Orcanos RAG pipeline, query router, chunking, retrieval, or ETL indexing. Provides architectural context for the 2-stage router, hybrid search, streaming pipeline, and Google Drive indexing.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # Orcanos RAG Architecture

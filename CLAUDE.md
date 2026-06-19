@@ -6,7 +6,7 @@ A collection of reusable Claude Code skills. Each skill is a folder containing a
 
 ## Current versions (update after every bump)
 - **Skills Library:** `1.0.0`
-- **Individual Skills:** `1.0` each (see SKILL.md frontmatter)
+- **Individual Skills:** `1.0.0` each (see SKILL.md frontmatter for revision)
 
 ---
 

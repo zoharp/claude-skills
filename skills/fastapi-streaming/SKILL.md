@@ -1,7 +1,7 @@
 ﻿---
 name: fastapi-streaming
 description: Use when working on FastAPI streaming endpoints, NDJSON event streams, or React fetch-based streaming consumers. Covers the Orcanos streaming pattern with step events and result events.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # FastAPI Streaming (NDJSON)

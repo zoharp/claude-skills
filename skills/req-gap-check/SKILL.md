@@ -1,7 +1,7 @@
 ---
 name: req-gap-check
 description: Scan all source files and report which have no linked requirement.
-revision: 1.0
+revision: 1.0.0
 ---
 
 # req-gap-check
