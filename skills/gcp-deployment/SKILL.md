@@ -1,6 +1,7 @@
 ---
 name: gcp-deployment
 description: Use when deploying to Google Cloud Run, configuring Cloud Build pipelines, managing Vercel frontend deployments, or handling GCP secrets and substitution variables. Invoke when working on Dockerfile, cloudbuild.yaml, or deploy scripts.
+revision: 1.0
 ---
 
 # GCP Deployment

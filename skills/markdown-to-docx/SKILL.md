@@ -2,6 +2,7 @@
 name: markdown-to-docx
 description: Convert markdown files to professional Word documents. Use this skill whenever a user needs to export markdown (.md) files as Word documents (.docx), especially for reports, documentation, due diligence responses, or any markdown that needs to be shared as a formatted Word file. Handles bold, italic, hyperlinks, tables, bullet lists, and Unicode status indicators automatically. Just provide the markdown file and specify output location.
 compatibility: Requires python-docx library
+revision: 1.0
 ---
 
 # Markdown to Word Converter Skill

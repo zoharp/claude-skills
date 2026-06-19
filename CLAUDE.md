@@ -4,6 +4,12 @@ A collection of reusable Claude Code skills. Each skill is a folder containing a
 
 ---
 
+## Current versions (update after every bump)
+- **Skills Library:** `1.0.0`
+- **Individual Skills:** `1.0` each (see SKILL.md frontmatter)
+
+---
+
 ## Project Goal
 
 Maintain and publish a library of Claude Code skills that other users can install into their own projects. Skills are self-contained — each folder holds everything Claude needs to understand when and how to apply that skill.

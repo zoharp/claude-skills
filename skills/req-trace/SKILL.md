@@ -1,6 +1,7 @@
 ---
 name: req-trace
 description: Trace a source file or function to its linked requirements, and identify gaps.
+revision: 1.0
 ---
 
 # req-trace — Requirement Traceability Analysis

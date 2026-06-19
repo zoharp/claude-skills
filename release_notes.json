@@ -1,0 +1,10 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-06-19",
+    "changes": [
+      "✨ **Skill Versioning** — added revision: 1.0 field to all 17 skills for version tracking",
+      "🔄 **Revision tracking** — each skill now tracks its version independently in SKILL.md frontmatter"
+    ]
+  }
+]

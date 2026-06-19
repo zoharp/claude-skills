@@ -1,6 +1,7 @@
 ---
 name: req-status
 description: Show a compliance status dashboard for all current requirements.
+revision: 1.0
 ---
 
 # req-status

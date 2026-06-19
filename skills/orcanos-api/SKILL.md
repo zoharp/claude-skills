@@ -1,6 +1,7 @@
 ﻿---
 name: orcanos-api
 description: Reference guide for Orcanos QMS REST API — base URL, authentication, CORS/proxy patterns, and routing to specific API skills. Start here when building Orcanos integrations.
+revision: 1.0
 ---
 
 # Orcanos REST API — Router & Reference

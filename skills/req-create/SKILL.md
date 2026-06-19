@@ -1,6 +1,7 @@
 ---
 name: req-create
 description: Create an IEC 62304 software requirement from a feature description or code change.
+revision: 1.0
 ---
 
 # req-create — IEC 62304 Requirement Creation

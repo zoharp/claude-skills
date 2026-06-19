@@ -2,6 +2,7 @@
 name: new-project
 description: End-to-end project creation - design review, implementation planning, code generation, testing, database setup, and deployment configuration for Orcanos environment
 license: MIT
+revision: 1.0
 ---
 
 # New Project Skill
