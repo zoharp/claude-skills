@@ -1,32 +1,49 @@
-# QW_AddRelation — Create Traceability Link
+# Create Traceability Link — QW_AddRelation vs QW_Add_Relations_Custom_Code
+
+There are **two** relation endpoints with the **same** request body (`Add_Relations_Parameter`):
+
+| Endpoint | Key form it expects |
+|---|---|
+| `QW_AddRelation` | the true **original** work-item code |
+| `QW_Add_Relations_Custom_Code` | the **custom / display** code (and it also accepts the `Item_type[].Code` from `QW_Login`) |
+
+> ✅ **Verified against the live API (orca60, 2026-07-10):** keys built as `{Item_type.Code}-{id}`
+> (e.g. `T_CASE-26470`, `SRS-26469`) **succeed with `QW_Add_Relations_Custom_Code`** and
+> **fail with `QW_AddRelation`** — the latter returns a misleading `"Item is deleted and cannot
+> be updated."`. So when your keys come from `QW_Login`'s `Item_type[].Code` (or from the matrix's
+> displayed keys), use **`QW_Add_Relations_Custom_Code`**.
 
 ## Endpoint
 
 ```
-POST <base>/v2/Json/QW_AddRelation
+POST <base>/api/v2/Json/QW_Add_Relations_Custom_Code     ← use this one for Item_type.Code / display keys
+POST <base>/api/v2/Json/QW_AddRelation                    ← only for true original codes
 Content-Type: application/json
 Authorization: Bearer <api-key> OR Basic <base64(username:password)>
 OrcanosAPIKey: <api-key>  (alternative header)
 ```
 
+`<base>` includes the tenant, e.g. `https://app.orcanos.com/orca60`.
+
 **Auth:** See [main skill](SKILL.md) for auth options. Requires either `Authorization` header or `OrcanosAPIKey` header.
+
+**RelationType:** optional. Empty → Orcanos uses the default link type (observed: `"Dependent On"`).
 
 ---
 
-## ⚠️ CRITICAL: Original Code, Not Custom Code
+## Which code to use
 
-**IMPORTANT:** Always use the **original work item code**, never the custom code.
+- **`QW_Add_Relations_Custom_Code`** (recommended when your keys come from `QW_Login`) resolves items
+  by their **custom / display code**, and in practice also accepts the `Item_type[].Code` value
+  (e.g. `T_CASE`, `SRS`). Build the key as `{Item_type.Code}-{id}` — where `id` is the item's numeric
+  id (from `QW_Add_Object`'s returned `Data`, or the number in a displayed key like `SR-19832`).
+- **`QW_AddRelation`** only accepts the true **original** code and rejects the `Item_type.Code` form.
+  Prefer the custom-code endpoint unless you know the true original code.
 
-**Example:**
-- Item displays as: `ECO-30829`
-  - `ECO` = custom code (do NOT use this)
-  - `CR` = original code (use THIS)
-  - Correct API call: `"SourceIdKeys": "CR-30829"`
-  
-- Another example: `DMS-23175`
-  - `DMS` = custom code (do NOT use this)
-  - Original code = use the actual original prefix (use THIS)
-  - Correct API call: `"SourceIdKeys": "ORIG-23175"` (replace ORIG with actual original code)
+**Key building (custom-code endpoint):**
+- New item just created with `QW_Add_Object` → `{childType.Code}-{returnedId}` (e.g. `T_CASE-26470`).
+- Existing item shown in a grid → use its **displayed key** as-is (e.g. `SR-19832`), stripping any
+  ` (nnnn)` suffix.
 
 ---
 

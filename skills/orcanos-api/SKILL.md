@@ -14,7 +14,7 @@ This skill covers API fundamentals. For specific endpoint details, see the per-A
 
 ## Base URL & Endpoint pattern
 
-All endpoints are under:
+Most endpoints are under:
 ```
 https://<instance>/<tenant>/api/v2/Json/<endpoint>
 ```
@@ -26,6 +26,13 @@ https://us.orcanos.com/acme/api/v2/Json/QW_Get_Filter_Results
 ```
 
 The tenant path (e.g. `orca60`, `acme`) is returned in `QW_Login` response as `User_details.Virtual_dir`.
+
+**AI (Ask Paul) endpoints use a different sub-path** — `/api/v2/OrcanosAI/` instead of `/api/v2/Json/`:
+```
+https://app.orcanos.com/orca60/api/v2/OrcanosAI/Fetch_AI_Prompts
+https://app.orcanos.com/orca60/api/v2/OrcanosAI/Get_AI_Response
+```
+Swagger UI: `https://<instance>/<tenant>/api/swagger/ui/index#!/OrcanosAI/`.
 
 ---
 
@@ -118,10 +125,18 @@ The Orcanos QMS FastAPI backend proxies these endpoints:
 ### Core APIs
 - **[QW_Login](qw-login.md)** — Authenticate with username/password, receive projects & user details
 - **[QW_Get_Filter_Results](qw-get-filter-results.md)** — Fetch items from a saved filter, with pagination & SQL filtering
+- **[GetFilterList](get-filter-list.md)** — List the saved filters a user can pick for a `(ProjectId, ItemType)` pair, to power a filter-picker dropdown. ⚠️ `ItemType` is the work-item **DESCRIPTION/Label** ("Software Requirement"), **not** the code (`SRS`) — the code returns an empty list, not an error. ⚠️ Optional per tenant — a bare JSON array (no `IsSuccess` wrapper); treat a 404 / non-array as "not available" and fall back to a manual filter-ID input
 
 ### Item & Traceability Management
-- **[QW_Add_Item](qw-add-item.md)** — Create or update work items (REQ, TC, DEF, etc.)
-- **[QW_Add_Trace](qw-add-trace.md)** — Create traceability links between items
+- **[QW_Add_Object](qw-add-item.md)** — Create a work item (⚠️ the method is `QW_Add_Object`; `QW_Add_Item` does not exist / 404s)
+- **[QW_Add_Relations_Custom_Code / QW_AddRelation](qw-add-trace.md)** — Create a traceability link. Use `QW_Add_Relations_Custom_Code` for keys built from `Item_type.Code` / displayed codes; `QW_AddRelation` only accepts true original codes
+- **[QW_Get_Object_Relations](qw-get-object-relations.md)** — Read an item's relations (edge ids only), incl. items outside a filter's scope. Cycle-safe recursive expansion pattern included
+- **[QW_Get_Object](qw-get-object.md)** — Fetch a single item's full field details by id (path form `QW_Get_Object/<id>`). Powers item info cards / hover previews and enriches a relations id into a named node
+- **[QW_Add_Step](qw-add-step.md)** — Append a test step (action + expected result) to a test case; call once per step in order
+
+### AI — Ask Paul (base path `/api/v2/OrcanosAI/`)
+- **[Fetch_AI_Prompts](ai-fetch-prompts.md)** — List Create-&-Trace AI prompts; pick `AI_Prompt_Id` by matching source `item_type` label + child keyword (e.g. "Test Case")
+- **[Get_AI_Response](ai-get-response.md)** — Run a prompt on a source item → draft children (Name+Description); then create & trace them via `QW_Add_Object` + `QW_Add_Relations_Custom_Code`. Gated on the `O` ("Enable Ask Paul") permission from `QW_Login`
 
 ### Additional APIs
 Add more as needed (remaining ~96 APIs):

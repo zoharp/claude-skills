@@ -12,6 +12,28 @@ Content-Type: application/json
 
 ---
 
+## ⚠️ Critical: Pagination Settings
+
+**For pagination to work correctly with accurate total record counts, you MUST use:**
+
+```json
+{
+  "IsNewPaging": "0",
+  "IsReturnPageCount": "yes"
+}
+```
+
+This is **the only combination** that returns both paginated rows AND accurate `Total_records`.
+
+**What breaks pagination:**
+- `IsNewPaging: "1"` → `Total_records` becomes unreliable
+- `IsReturnPageCount: "0"` → No total count returned
+- `IsReturnPageCount: "1"` (numeric) → API returns empty Data (error!)
+
+See [Pagination & Return Types](#pagination--return-types) section below for full details.
+
+---
+
 ## Request Body
 
 ```json
@@ -23,8 +45,8 @@ Content-Type: application/json
   "Version_id": "434",
   "Filter_By": "",
   "Order_By": "",
-  "IsNewPaging": "1",
-  "IsReturnPageCount": "0",
+  "IsNewPaging": "0",
+  "IsReturnPageCount": "yes",
   "DashboardItemId": "0",
   "IncludeProtectedCol": "true"
 }
@@ -39,8 +61,8 @@ Content-Type: application/json
 | `Version_id` | string | No | Project version ID from `QW_Login` |
 | `Filter_By` | string | No | SQL WHERE fragment (appended to filter's WHERE) |
 | `Order_By` | string | No | SQL ORDER BY clause |
-| `IsNewPaging` | string | No | Use `"1"` for pagination support |
-| `IsReturnPageCount` | string | No | Use `"0"` for data rows. Use `"1"` to get filter column metadata only |
+| `IsNewPaging` | string | No | **MUST be `"0"`** (string) for correct pagination with Total_records |
+| `IsReturnPageCount` | string | No | **MUST be `"yes"`** (string) to get both rows AND accurate total count. NOT "0" or "1" |
 | `DashboardItemId` | string | No | Dashboard context (optional) |
 | `IncludeProtectedCol` | string | No | Include protected columns in response |
 
@@ -194,22 +216,39 @@ ID IN (select * from dbo.fn_GetRootParentByCS21('39382'))
 
 ## Pagination & Return Types
 
-**Critical:** `IsNewPaging` and `IsReturnPageCount` control what data is returned:
+⚠️ **LOAD-BEARING SETTINGS:** This combination is the ONLY one that returns BOTH paginated rows AND accurate `Total_records`:
 
-| `IsReturnPageCount` | Effect | Use Case |
-|---|---|---|
-| `"0"` (string) | Returns actual work item rows with field values | Normal queries — fetch items |
-| `"1"` (string) | Returns **filter column metadata only** — no item data | Get column definitions, not rows |
-
-**Use these settings for normal item queries:**
 ```json
 {
-  "IsNewPaging": "1",
-  "IsReturnPageCount": "0"
+  "IsNewPaging": "0",           // Must be "0" (string)
+  "IsReturnPageCount": "yes"    // Must be "yes" (string) — NOT "0" or 1 (numeric)
 }
 ```
 
-**Important:** If `IsReturnPageCount` is `"1"`, the response contains only column metadata (field names, types, order). Use this to understand the filter structure, not to fetch items. Switch to `"0"` to get actual work item data.
+### Why This Works
+
+- `IsNewPaging: "0"` + `IsReturnPageCount: "yes"` returns full rows with pagination
+- `IsNewPaging: "1"` makes `Total_records` echo `Page_Size` (wrong!)
+- `IsReturnPageCount: "0"` returns no total count
+- `IsReturnPageCount: "1"` (numeric) causes API to return empty Data (error!)
+
+### What You Get
+
+With the correct settings, the response includes:
+```json
+{
+  "IsSuccess": true,
+  "Data": {
+    "Object": [...paginated rows...],
+    "Total_records": 127          // Accurate total across all pages
+  }
+}
+```
+
+Use `Total_records` to calculate total pages:
+```js
+const totalPages = Math.ceil(Total_records / pageSize);
+```
 
 ---
 
@@ -244,8 +283,8 @@ async function fetchItems({
     Item_Type: itemType,
     Version_id: String(versionId),
     Filter_By: filterBy,
-    IsNewPaging: '1',          // string: enable pagination
-    IsReturnPageCount: '0'     // string: get item data (not column metadata)
+    IsNewPaging: '0',           // MUST be "0" — "1" breaks Total_records
+    IsReturnPageCount: 'yes'    // MUST be "yes" — "0" or 1 (numeric) breaks it
   };
   if (filterBy) body.Filter_By = filterBy;
 
@@ -263,10 +302,14 @@ async function fetchItems({
   if (!data.IsSuccess) throw new Error(data.Data || data.Message || 'Filter failed');
 
   const items = data.Data?.Object ?? [];
+  const totalRecords = parseInt(data.Data?.Total_records ?? items.length, 10);
+  const totalPages = Math.ceil(totalRecords / pageSize);
+  
   return {
     items,
-    total: parseInt(data.Data?.Total_records ?? 0, 10),
-    hasMore: items.length >= pageSize
+    total: totalRecords,
+    totalPages,
+    hasMore: page < totalPages
   };
 }
 ```
