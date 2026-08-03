@@ -132,7 +132,9 @@ The Orcanos QMS FastAPI backend proxies these endpoints:
 - **[QW_Add_Relations_Custom_Code / QW_AddRelation](qw-add-trace.md)** — Create a traceability link. Use `QW_Add_Relations_Custom_Code` for keys built from `Item_type.Code` / displayed codes; `QW_AddRelation` only accepts true original codes
 - **[QW_Get_Object_Relations](qw-get-object-relations.md)** — Read an item's relations (edge ids only), incl. items outside a filter's scope. Cycle-safe recursive expansion pattern included
 - **[QW_Get_Object](qw-get-object.md)** — Fetch a single item's full field details by id (path form `QW_Get_Object/<id>`). Powers item info cards / hover previews and enriches a relations id into a named node
+- **[Get_Children](get-children.md)** — An item's **direct children** (the containment/outline tree, *not* trace links), pre-enriched with Name/Type/Status/`ItemURL`. ⚠️ Method has **no `QW_` prefix**; a child's `Ver_Id` can differ from the parent's — recurse with the child's own version and use the returned `ItemURL` as-is
 - **[QW_Add_Step](qw-add-step.md)** — Append a test step (action + expected result) to a test case; call once per step in order
+- **[QW_Get_Item_Add_Edit](qw-get-item-add-edit.md)** — Fetch an item type's Add/Edit **form definition**: fields, sections, display order, picklist values, and mandatory/conditional-mandatory rules. Use to render a dynamic form or validate a payload before `QW_Add_Object`
 
 ### AI — Ask Paul (base path `/api/v2/OrcanosAI/`)
 - **[Fetch_AI_Prompts](ai-fetch-prompts.md)** — List Create-&-Trace AI prompts; pick `AI_Prompt_Id` by matching source `item_type` label + child keyword (e.g. "Test Case")
@@ -219,4 +221,5 @@ function itemUrl(baseUrl, versionId, type, itemId) {
 - API reference: https://help.orcanos.com/knowledgebase/
 - Rate limits: (check documentation)
 - Orcanos QMS project backend proxy: `backend/api.py`
+- [`orcanos-form-builder`](../orcanos-form-builder/SKILL.md) — builds a rendered Add/Edit form (mockup or real React screen) from `QW_Get_Item_Add_Edit`, using this skill for the API call
 
