@@ -1,12 +1,20 @@
 ﻿---
 name: orcanos-api
 description: Reference guide for Orcanos QMS REST API — base URL, authentication, CORS/proxy patterns, and routing to specific API skills. Start here when building Orcanos integrations.
-revision: 1.0.0
+revision: 1.1.0
 ---
 
 # Orcanos REST API — Router & Reference
 
 **Reference docs:** `https://help.orcanos.com/knowledgebase/`
+
+**Machine-readable contract:** `https://<instance>/<tenant>/api/swagger/docs/v1` — the raw OpenAPI
+JSON behind the Swagger UI (e.g. `https://app.orcanos.com/orca60/api/swagger/docs/v1`). No auth
+needed, ~140 KB, every path + parameter + definition. **Pull this whenever an endpoint here is
+under-documented or missing** — it's authoritative about verbs, required params and header names in
+a way the knowledgebase often isn't. Note the Swagger *UI* is a SPA, so its `#!/Json/<op>` fragment
+URLs can't be fetched — grep the JSON instead. (`docs/v2` 404s; the spec is `v1` even though the
+routes live under `/v2/`.)
 
 This skill covers API fundamentals. For specific endpoint details, see the per-API skills listed below.
 
@@ -125,7 +133,9 @@ The Orcanos QMS FastAPI backend proxies these endpoints:
 ### Core APIs
 - **[QW_Login](qw-login.md)** — Authenticate with username/password, receive projects & user details
 - **[QW_Get_Filter_Results](qw-get-filter-results.md)** — Fetch items from a saved filter, with pagination & SQL filtering
+- **[Filter-result fields](filter-result-fields.md)** — **the `Field[]` dictionary**: what all ~46 returned columns mean (identity, content, workflow, tree-vs-trace, revision/branching, routing/e-signature, ECO, audit), per-field `Text` semantics and blank sentinels, plus the item envelope (`Type` / `Version` / `Freeze`). ⚠️ `Order` is **alphabetical by Title**, not the column order; `Web_order` is the column order but is **not unique**; `CS<n>` field names are **tenant-specific slots** — match those on `Title`. Load when *interpreting* results; [qw-get-filter-results.md](qw-get-filter-results.md) stays the how-to-call doc
 - **[GetFilterList](get-filter-list.md)** — List the saved filters a user can pick for a `(ProjectId, ItemType)` pair, to power a filter-picker dropdown. ⚠️ `ItemType` is the work-item **DESCRIPTION/Label** ("Software Requirement"), **not** the code (`SRS`) — the code returns an empty list, not an error. ⚠️ Optional per tenant — a bare JSON array (no `IsSuccess` wrapper); treat a 404 / non-array as "not available" and fall back to a manual filter-ID input
+- **[GetSystemTableValues](get-system-table-values.md)** — The **values of one system table** (the picklist source behind combo-box / multi-select custom fields), paged. ⚠️ A **`GET` with query params**, not a POST body; **no `QW_` prefix**. Required param is `TableName` (the *table's* code) — `Code` is a separate optional filter on a single *value*. Keep `PageSize` in **1–100** and pass `PageNo` explicitly. Also covers the sibling `GetSystemTable` (list the tables) and `SystemTableValue_Get` (⚠️ body property is misspelled `TabelName`)
 
 ### Item & Traceability Management
 - **[QW_Add_Object](qw-add-item.md)** — Create a work item (⚠️ the method is `QW_Add_Object`; `QW_Add_Item` does not exist / 404s)

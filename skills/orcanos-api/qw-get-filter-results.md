@@ -104,6 +104,59 @@ function getItemName(item) {
 
 ---
 
+## ⚠️ `Traced Items Info` — THREE shapes, one of them is HTML
+
+This is the field the whole trace graph is built on (each item's onward links). Orcanos
+returns it in **three different shapes, and one value can mix them**, depending on the
+item type and how the filter's column is configured:
+
+| Shape | Example |
+|---|---|
+| Plain key | `SR-4444` |
+| Key + trailing text | `TC-44333 (Pass)` · `TC-8789 (7678)` |
+| **An `<a>` hyperlink** | `<a target='_blank' href='#@#332/items/view?Item=REQ&ItemId=26521' class='blue-link traced_items_list' data-item-type='REQ' data-item-id='26521'> PR-26521</a>` |
+
+**Only the KEY is ever wanted** — `PR-26521`, `TC-44333`. Rules learned the hard way:
+
+- **Never `part.split()[0]` the raw value.** On the hyperlink shape that returns `"<a"`,
+  which matches no item — so the trace silently doesn't resolve and the chain reads as a
+  gap. The bug is invisible: no error, just a missing link.
+- **Strip tags *before* splitting, and treat `</a>` (and `<br>`, `</li>`, `</p>`) as an
+  item separator** — two hyperlinks are not always comma-separated.
+- **Strip and decode in a loop.** The value can be **double-encoded** (`&lt;a href=…`), so
+  a decode pass can itself produce markup that still needs stripping.
+- **Don't sweep the raw text for `-(\d+)` to get ids.** Attributes like
+  `data-item-id='26521'` and `class='blue-link'` sit in the same string. Extract the keys
+  first, then take the number from each key.
+- **Text after the key is not part of the key** — `(Pass)` is a run result, `(7678)` is the
+  internal id. Cut at the first whitespace/paren *after* a `PREFIX-digits` token.
+
+Key shape is `[A-Za-z][A-Za-z0-9_]*-\d+` — the prefix can carry an underscore (`MR_REQ-26514`).
+
+```js
+const TAG = /<[^>]+>/g;
+const BREAK = /<\/\s*(?:a|p|div|li|tr|span)\s*>|<\s*br\s*\/?>/gi;
+const KEY = /[A-Za-z][A-Za-z0-9_]*-\d+/;
+
+function tracedKeys(text) {
+  let s = String(text || '');
+  for (let i = 0; i < 3; i++) {                  // strip ⇄ decode until stable
+    const before = s;
+    if (s.includes('<') && s.includes('>')) s = s.replace(BREAK, ' , ').replace(TAG, ' ');
+    s = decodeEntities(s);
+    if (s === before) break;
+  }
+  return s.split(/[,;\n]+/)
+          .map(p => (p.match(KEY) || [p.trim().split(/\s+/)[0]])[0])
+          .filter(k => k && k.toLowerCase() !== 'none');
+}
+```
+
+Matching is symmetric: the child item's own `Key` may also read `TC-8789 (7677)`, so put
+**both sides** through the same prefix extraction before comparing.
+
+---
+
 ## Success Response
 
 ```json
@@ -132,11 +185,19 @@ Each item's `Field` is an array of field objects:
 
 | Property | Meaning | Use |
 |---|---|---|
-| `Name` | Internal field name (e.g. `Obj_name`, `Status`) | Database lookups |
-| `Title` | Human-readable label | Display to user |
-| `Text` | Raw stored value (for picklists, this is internal id) | Database operations |
-| `Display_text` | Picklist label (if applicable) | **Prefer this for display** |
-| `Web_order` | Sort order (ascending) | Column ordering |
+| `Name` | `table.field` name (e.g. `Obj_name`, `DMS_Revision`) | **Match on this** — stable across tenants |
+| `Title` | Human-readable label | Display to user (tenant-customisable — unsafe as a key) |
+| `Text` | The value. For some picklists the internal code, for others already the label | Varies per field |
+| `Display_text` | Picklist label (when present) | **Prefer this for display** |
+| `Type` | Widget hint: `text` / `numeric` / `date` / `combobox` / `multiSelect` / `richEditor` | ⚠️ Not a parse guarantee — a `text` field can hold HTML |
+| `Visible` | `Y`/`N` — belongs in a user-facing field list | Hide `N` (`ID`, `IsLink`) |
+| `Order` | Position in the **field catalogue** | ⚠️ **Alphabetical by `Title`** — never use it for column order |
+| `Web_order` | Grid column order — **non-unique**, `null` off-grid | See the stable sort below |
+
+> 📖 **[filter-result-fields.md](filter-result-fields.md) documents all ~46 system fields** —
+> what each one means, which sentinel counts as "empty", the tree-vs-trace fields, the routing /
+> ECO / revision groups, and the three-different-names-for-one-type trap. Read it whenever you're
+> deciding which columns to show or what a value means.
 
 **Safe field extractor:**
 ```js
@@ -147,11 +208,19 @@ function fieldValue(item, nameOrTitle) {
   // Prefer Display_text for picklists; fall back to raw Text
   return f?.Display_text || f?.Display || f?.Text || f?.Value || '';
 }
+```
 
-// Sort fields by web order
-const fields = [...item.Field].sort((a, b) =>
-  (parseInt(a.Web_order) || 0) - (parseInt(b.Web_order) || 0)
-);
+**Grid columns, in the filter's order.** `Web_order` is non-`null` only on the fields the filter
+shows, and it **is not unique** — a real response carries `Web_order: "1"` on both *Name* and
+*Start Date*. Sort with the API's own array order as the tiebreak, never on `Order`:
+
+```js
+const columns = item.Field
+  .map((f, i) => ({ f, i }))                        // keep API order as tiebreak
+  .filter(({ f }) => f.Web_order != null)           // only the filter's grid columns
+  .sort((a, b) =>
+    (parseInt(a.f.Web_order, 10) - parseInt(b.f.Web_order, 10)) || (a.i - b.i))
+  .map(({ f }) => f);
 ```
 
 ---
@@ -318,4 +387,6 @@ async function fetchItems({
 
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
+- **[Filter-result fields](filter-result-fields.md)** — the full `Field[]` dictionary: what every returned column means, per-field `Text` semantics, the `Order` / `Web_order` traps, and the item envelope (`Type` / `Version` / `Freeze` / `Allow_edit`)
 - [QW_Login](qw-login.md) — Authenticate and fetch projects/versions
+- [QW_Get_Item_Add_Edit](qw-get-item-add-edit.md) — resolve a **custom** field that isn't in the dictionary

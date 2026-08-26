@@ -1,11 +1,23 @@
 ---
 name: orcanos-login
 description: Build Orcanos login screens with QW_Login API integration, design, and reusable patterns
+revision: 1.1.0
 ---
 
 # Orcanos Login Screen Skill
 
 Build a production-ready login screen for any Orcanos-connected app using the QW_Login API.
+
+> **Companion skills — read them alongside this one.**
+> [`orcanos-api/qw-login.md`](../orcanos-api/qw-login.md) is the authoritative
+> response contract (project/version extraction, per-type permissions, `Is_admin`,
+> `Idle_time`). [`orcanos-api/SKILL.md`](../orcanos-api/SKILL.md) covers the base
+> URL, UTF-8 base64, and the CORS/proxy rule. [`ui-ux`](../ui-ux/SKILL.md) has the
+> design tokens. This skill is the screen; those are the contract and the styling.
+>
+> A shipped, hardened implementation of this pattern:
+> `c:\AI Projects\covaris-bom` → `ORCANOS_LOGIN_PATTERN.md`, `src/auth/`,
+> `login()` in `src/api/orcanosClient.js`.
 
 ## What this covers
 
@@ -36,6 +48,12 @@ Provide:
 POST {baseUrl}api/v2/Json/QW_Login
 ```
 
+⚠️ **Browser-direct calls fail — Orcanos sends no CORS headers.** Call it through a
+proxy path your own infrastructure owns (`/api/orcanos/QW_Login`), backed by a Vite
+dev proxy, a Vercel/IIS rewrite, or a backend relay. In a browser app, `baseUrl` from
+config is for building *links into Orcanos*, not for API calls — keep the two apart
+and say so in your settings UI.
+
 ### Headers
 ```
 Authorization: Basic {base64(username:password)}
@@ -44,19 +62,48 @@ Content-Type: application/json
 
 **Never store the plaintext password.** Only store the `Authorization` header in `localStorage`.
 
-### Request
-```json
-{}
+**Encode UTF-8 first — bare `btoa()` throws on accented characters:**
+```js
+function utf8ToBase64(s) {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  return btoa(bin);
+}
+const authHeader = 'Basic ' + utf8ToBase64(`${username}:${password}`);
 ```
-(empty body)
+
+### Request
+
+**No body at all.** `{}` also works, but nothing is read from it — the credentials
+travel in the header.
 
 ### Success (HTTP 200)
 ```json
 {
   "IsSuccess": true,
-  "Data": { "UserName": "...", "UserId": "...", ... }
+  "Data": {
+    "User_details": { "User_name": "...", "Display_name": "...", "Virtual_dir": "orca60", "Is_admin": "1" },
+    "Projects": { "Project": [ { "Id": "14667", "Version": [ { "Ver_id": "438" } ], "Item_type": [ … ] } ] },
+    "Configurations": { "Idle_time": "45" }
+  }
 }
 ```
+
+🛑 **`Data.Projects` is XML-to-JSON wrapped** — the array is at `Data.Projects.Project`,
+and a single project arrives as an object, not a 1-element array. `Array.isArray(data.Data.Projects)`
+is `false`, so any gate written that way silently never fires. Always unwrap:
+
+```js
+const ensureArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
+const projects = ensureArray(data.Data?.Projects?.Project);
+```
+
+Same trap on the session timeout: it is at **`Data.Configurations.Idle_time`** (minutes),
+not `Data.Idle_time`. Full extraction rules — versions, per-type permissions, `Is_admin` —
+are in [`orcanos-api/qw-login.md`](../orcanos-api/qw-login.md).
 
 ### Error (HTTP 401/403/500)
 ```json
@@ -66,7 +113,41 @@ Content-Type: application/json
 }
 ```
 
-**Always show a generic error message to the user.** Never echo the server's message (it may leak system details).
+Distinguish the cases in the message you show: `401` → "Invalid username or password",
+other non-2xx → "Login failed (HTTP nnn)", thrown fetch → "Could not reach <server>".
+Users need to tell a wrong password apart from a dead server. Beyond that, keep the
+copy generic — never echo the server's own text (it can leak system details).
+
+---
+
+## Two things worth adding beyond the happy path
+
+### Project authorization gate
+
+If the app is bound to one project/version, reject a valid user who has no access to
+it at login instead of dropping them into an empty screen. **Fail open** when the
+list is missing — an older tenant that returns no `Projects` should still get in.
+
+```js
+const projects = ensureArray(data.Data?.Projects?.Project);
+if (projects.length > 0) {
+  const allowed = projects.some((p) =>
+    ensureArray(p.Version).some((v) => String(v.Ver_id) === String(versionId)) ||
+    String(p.Id) === String(versionId));
+  if (!allowed) return { ok: false, error: 'Not authorised for this project.' };
+}
+```
+
+### Idle timeout driven by the server's setting
+
+```js
+const idleMinutes = parseInt(data.Data?.Configurations?.Idle_time ?? '', 10) || null;
+```
+
+Pass it to a hook that resets a timer on `mousemove` / `mousedown` / `keydown` /
+`scroll` / `touchstart` and calls the same sign-out path a `401` would, with an
+"signed out due to inactivity" message. The credential is Basic auth with no token
+to expire client-side, so this is the only client-side session bound you get.
 
 ---
 
@@ -140,15 +221,27 @@ const handleSubmit = async (e) => {
   setError(null);
 
   try {
-    const auth = btoa(`${username}:${password}`);
-    const response = await fetch(`${baseUrl}api/v2/Json/QW_Login`, {
+    const auth = 'Basic ' + utf8ToBase64(`${username}:${password}`);   // NOT bare btoa()
+    const response = await fetch('/api/orcanos/QW_Login', {            // proxied path, not baseUrl
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        'Authorization': auth,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify({}),
+      // no body
     });
+
+    if (response.status === 401) {
+      setError('Invalid username or password.');
+      setPassword('');
+      return;
+    }
+    if (!response.ok) {
+      setError(`Login failed (HTTP ${response.status}).`);
+      setPassword('');
+      return;
+    }
 
     const data = await response.json();
     if (!data.IsSuccess) {
@@ -157,12 +250,14 @@ const handleSubmit = async (e) => {
       return;
     }
 
-    // Success
-    localStorage.setItem('orcanos_auth', `Basic ${auth}`);
-    localStorage.setItem('orcanos_user', username);
+    // Optional: project gate + idle timeout — see the section above.
+
+    // Success — namespace the keys per app, not generic `orcanos_*`.
+    localStorage.setItem('myapp_auth', auth);
+    localStorage.setItem('myapp_user', username);
     onSuccess?.();
   } catch (err) {
-    setError('Network error. Check your connection and try again.');
+    setError('Could not reach the server. Check your connection and try again.');
     setPassword('');
   } finally {
     setLoading(false);
@@ -365,8 +460,10 @@ const handleSubmit = async (e) => {
 ## Key gotchas
 
 - ✅ **Auth is sent as a header**, not in the body. Encode `username:password` as Base64, prepend `Basic `.
+- ✅ **Encode through UTF-8 first.** Bare `btoa()` throws on an accented password.
+- ✅ **Go through a proxy path.** Orcanos sends no CORS headers; a browser-direct call fails.
 - ✅ **Never store plaintext passwords.** Only store the `Authorization` header.
-- ✅ **QW_Login returns `IsSuccess` boolean.** Don't try to parse or validate the `Data` object.
+- ✅ **QW_Login returns `IsSuccess` boolean.** That's the gate. If you *do* read `Data`, unwrap `Projects.Project` and read the timeout at `Configurations.Idle_time` — both trip people up.
 - ✅ **Show generic errors to users.** Never echo the server's error message.
 - ✅ **Handle 401 on every API call.** When it happens, clear auth and redirect to login.
 - ✅ **Clear password on error.** Never show it again to the user.

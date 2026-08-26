@@ -205,6 +205,67 @@ function canAddType(typePerms, projectId, typeCode) {
 | `T` | Change Traceability for Freeze |
 | `O` | Enable Ask Paul |
 | `L` | Allow to Launch Training |
+| `V` | **View only — a READ-ONLY (viewer) licence.** Grants nothing; its presence *is* the denial |
+
+### ⭐ `V` — the viewer licence (verified orca60, 2026-08-22)
+
+A read-only user returns **`Permission == "V"` on EVERY `Item_type` of EVERY project** — 712/712
+entries across 19 projects on the test tenant — and never an `A`. `V` is the whole string, not a
+letter added to others.
+
+> 🛑 **`V` must be in your recognised-letter set even though it grants nothing.** The usual parser
+> unions only *known* letters and returns `""` when it recognises none — and `""` means **unknown**,
+> which every sane gate treats as **fail-open**. So a parser that doesn't know `V` hands a viewer a
+> permissive "unknown", and read-only users get write affordances. Recognising `V` converts that
+> "unknown" into a known-and-denied value. This shipped as a live bug.
+
+Corroborating signals on the same viewer (useful as a cross-check, not as the gate):
+
+- `Modules_permissions`: **all 24 `Enable_*` = `"0"`**, and `Qpack_items` / `Qpack_tree` /
+  `Qpack_esign` are **null**.
+- ⚠️ **`User_details.Add_workitem` is `"1"`** — on a viewer. It looks like the obvious global
+  add flag and it is **wrong**. Never gate on it.
+- `Is_admin` is `0`, but that is a *different axis* — it is also `0` for an ordinary full user.
+- There is **no licence-type field**. No `License_type`, no `Is_viewer`. `Account_mode` (`"EVAL"`)
+  is the **tenant's** licence mode, and `Is_externaluser` is a third, unrelated axis.
+
+```js
+const PERMISSION_MAP = { /* …, */ V: 'View only' };
+const isViewerForType = (perm) => (perm || '').toUpperCase() === 'V';
+// whole-user viewer: every Item_type[].Permission across every project is 'V'
+```
+
+---
+
+## Module permissions (`Modules_permissions`) — per project
+
+Each `Project` carries a `Modules_permissions` object of `"0"`/`"1"`/`"yes"`/`null` flags covering
+module access (`Qpack_items`, `Qpack_dashboard`, …) and individual actions (`Enable_add_dashboard`,
+`Enable_mass_update`, `Enable_add_public_filter`, …). These are **separate from the permission
+letters** — the letters gate *work items*, these gate *features*.
+
+| Flag | Gates |
+|---|---|
+| `Enable_add_dashboard` | Creating a dashboard. **Orcanos exposes exactly one dashboard-add flag** — the private/public split visible in its own UI is not surfaced separately here. It gates **dashboards only**; it is *not* a general write flag, so don't use it to gate item/trace writes (those are the per-type `A` letter) |
+| `Enable_add_private_filter` / `Enable_add_public_filter` | Saving filters (these *are* split) |
+| `Enable_traceability_report` | Running the traceability report |
+| `Qpack_items` / `Qpack_tree` / `Qpack_esign` | Module access (`null` = no access) |
+
+Read them per project and treat a **missing** flag as unknown → fail open, exactly like the letters.
+
+```js
+// Granted if ANY project grants it — a feature that isn't project-scoped until the user picks one.
+function canAddDashboard(loginData) {
+  let seen = false;
+  for (const p of ensureArray(loginData?.Data?.Projects?.Project)) {
+    const v = p?.Modules_permissions?.Enable_add_dashboard;
+    if (v == null) continue;
+    seen = true;
+    if (['1', 'true', 'yes', 'y'].includes(String(v).toLowerCase())) return true;
+  }
+  return seen ? false : null;   // null => field absent => unknown => caller fails open
+}
+```
 
 ### Decode the permission string
 
