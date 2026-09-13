@@ -28,6 +28,7 @@ POST https://app.orcanos.com/orca60/api/v2/Json/QW_Login
   "Data": {
     "User_details": {
       "User_name": "orca",
+      "User_email": "zoharp@orcanos.com",
       "Display_name": "Zohar Peretz",
       "Virtual_dir": "orca60",
       "Is_admin": "1",

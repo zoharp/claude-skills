@@ -1,7 +1,7 @@
 ﻿---
 name: orcanos-api
 description: Reference guide for Orcanos QMS REST API — base URL, authentication, CORS/proxy patterns, and routing to specific API skills. Start here when building Orcanos integrations.
-revision: 1.1.0
+revision: 1.2.0
 ---
 
 # Orcanos REST API — Router & Reference
@@ -139,21 +139,25 @@ The Orcanos QMS FastAPI backend proxies these endpoints:
 
 ### Item & Traceability Management
 - **[QW_Add_Object](qw-add-item.md)** — Create a work item (⚠️ the method is `QW_Add_Object`; `QW_Add_Item` does not exist / 404s)
+- **[QW_Update_Object](qw-update-item.md)** — Update an existing work item's fields. ⚠️ Keys on `Object_ID` + `View_Version` (the version **label** shown in the item's URL, e.g. `1.0` — not `Ver_id`), not `Major_Version`/`Minor_Version` like `QW_Add_Object`; whether omitted optional fields are preserved or cleared is undocumented — send current values for anything you don't intend to change
 - **[QW_Add_Relations_Custom_Code / QW_AddRelation](qw-add-trace.md)** — Create a traceability link. Use `QW_Add_Relations_Custom_Code` for keys built from `Item_type.Code` / displayed codes; `QW_AddRelation` only accepts true original codes
 - **[QW_Get_Object_Relations](qw-get-object-relations.md)** — Read an item's relations (edge ids only), incl. items outside a filter's scope. Cycle-safe recursive expansion pattern included
 - **[QW_Get_Object](qw-get-object.md)** — Fetch a single item's full field details by id (path form `QW_Get_Object/<id>`). Powers item info cards / hover previews and enriches a relations id into a named node
 - **[Get_Children](get-children.md)** — An item's **direct children** (the containment/outline tree, *not* trace links), pre-enriched with Name/Type/Status/`ItemURL`. ⚠️ Method has **no `QW_` prefix**; a child's `Ver_Id` can differ from the parent's — recurse with the child's own version and use the returned `ItemURL` as-is
 - **[QW_Add_Step](qw-add-step.md)** — Append a test step (action + expected result) to a test case; call once per step in order
+- **[QW_Get_Section_Data](get-section-data/qw-get-section-data.md)** — The contents of a work item's **tabs** (Attachments, History, Relations, Defects, **Revisions**), one section per call. Its own folder: [`get-section-data/`](get-section-data/) holds the transport doc plus one file per section, because each section returns completely different columns. ⚠️ A `GET` with query params; `Item_Type` is the **code** (`DMS`) and `Ver_Id` the **item's own** numeric version; every wrong input returns an **empty section with `IsSuccess: true`**, never an error. Rows are `field[]` arrays — index on `column`, never `title` (titles repeat). Documented sections: **[Revisions](get-section-data/section-revisions.md)** — the file/approval history of a DMS document — and **[History](get-section-data/section-history.md)**, any item's change log (rows nest a `details[]` of per-field before/after diffs; ⚠️ `'Change Made' → 'Change Made'` is a sentinel, `Item_Type`/`Ver_Id` are **ignored** here, and `Section_Name` is case-sensitive). History also carries **tags** — the snapshot taken whenever an item is signed — parsed out of the `Comment` and opened as frozen HTML (cover page + approvals + description) via `/web/<Ver_Id>/items/generatehtmlpage?…&ChangeNumber=<Change #>`; ⚠️ `Item changed : Tag …` rows are a *linked* item's tags, not this item's — and **[ViewAttachment](get-section-data/view-attachment-url.md)** to open one revision's PDF (a `/web/` viewer link built from the row; ⚠️ `AttachmentId` is the row's `ID`, **not** the document's `Obj_id` — both are titled `ID`; omitting it silently serves the *latest* revision, and `name=` is ignored). To pull the file **server-side** — including straight from **"DMS item + version id + revision letter" to the file** — see **[download-attachment.md](get-section-data/download-attachment.md)**. ⚠️ That route **ignores `Authorization: Basic`** and the row's `pdf_path` is blocked, so a backend must log in through the **web form** and reuse the session cookie; a dead session returns **200 + login HTML**, not 401. ⚠️ The `Content-Type` is **always `application/pdf` and lies** — Approved/Obsolete give a stamped PDF, a **Draft gives the source `.docx`**; read the extension from `Content-Disposition` (verified end-to-end 2026-09-02)
 - **[QW_Get_Item_Add_Edit](qw-get-item-add-edit.md)** — Fetch an item type's Add/Edit **form definition**: fields, sections, display order, picklist values, and mandatory/conditional-mandatory rules. Use to render a dynamic form or validate a payload before `QW_Add_Object`
+
+### Workflows / Process Flow — **no API exists**
+- **[`orcanos-workflow-chart`](../orcanos-workflow-chart/SKILL.md)** — an item type's **states, transitions, and the e-signature process gating each transition**. None of the 75 swagger endpoints returns any of this; the only machine-readable source is the **UI** page `/web/<Ver_Id>/items/workflowchart?ItemType=<CODE>`, which embeds the data as `const NodeEdgeContents` / `let nodes` JSON. ⚠️ Takes the **forms-auth session cookie**, not Basic (same as [download-attachment](get-section-data/download-attachment.md)); a wrong `Ver_Id` silently serves the **Dashboards page** at HTTP 200, an unknown ItemType silently serves an **empty** Process Flow page, and `process_name` — the approval gate — is in the embedded JSON but **not** in the table the page renders
 
 ### AI — Ask Paul (base path `/api/v2/OrcanosAI/`)
 - **[Fetch_AI_Prompts](ai-fetch-prompts.md)** — List Create-&-Trace AI prompts; pick `AI_Prompt_Id` by matching source `item_type` label + child keyword (e.g. "Test Case")
 - **[Get_AI_Response](ai-get-response.md)** — Run a prompt on a source item → draft children (Name+Description); then create & trace them via `QW_Add_Object` + `QW_Add_Relations_Custom_Code`. Gated on the `O` ("Enable Ask Paul") permission from `QW_Login`
 
 ### Additional APIs
-Add more as needed (remaining ~96 APIs):
+Add more as needed (remaining ~95 APIs):
 - `qw-create-project.md`
-- `qw-update-item.md`
 - `qw-get-item.md`
 - ... etc
 
@@ -208,12 +212,48 @@ The `Id` field is a string like `"46584 (42195)"` — the parenthetical number i
 const id = String(itemId).match(/\((\d+)\)/)?.[1];
 ```
 
-### Build web URLs
+### Build web URLs (deep links into the Orcanos UI)
+
+These are **UI** routes under `/web/`, not API routes under `/api/v2/`. All of them take the
+**tenant base URL** (`https://app.orcanos.com/orca60` — the account segment is already in it, so
+nothing here needs the tenant name separately) and a **`Ver_id`**, the numeric version id from
+`QW_Login`'s `Projects.Project[].Version[].Ver_id` (e.g. `341`) — **not** the version *label*
+(`1.0`) that `QW_Add_Object` wants.
+
 ```js
-function itemUrl(baseUrl, versionId, type, itemId) {
-  return `${baseUrl}web/${versionId}/items/view?Item=${encodeURIComponent(type)}&ItemId=${encodeURIComponent(itemId)}`;
+const base = (u) => String(u).replace(/\/+$/, '');   // never double the slash
+
+// One item
+function itemUrl(baseUrl, versionId, typeCode, itemId) {
+  return `${base(baseUrl)}/web/${versionId}/QPackItems/view`
+       + `?Item=${encodeURIComponent(typeCode)}&ItemId=${encodeURIComponent(itemId)}`;
+}
+
+// A saved filter's item listing — "open this filter in Orcanos"
+function filterListingUrl(baseUrl, versionId, typeCode, filterId) {
+  return `${base(baseUrl)}/web/${versionId}/items/listing`
+       + `?Item=${encodeURIComponent(typeCode)}&FilterId=${encodeURIComponent(filterId)}`;
 }
 ```
+```
+https://app.orcanos.com/orca60/web/341/items/listing?Item=MR_REQ&FilterId=863
+```
+
+⚠️ **Four traps, all of them silent:**
+
+- **`Item=` is the work-item ORIGINAL CODE** (`MR_REQ`, `T_CASE`, `DMS`), never the
+  DESCRIPTION/Label ("Software Requirement"). This is the exact **opposite** of
+  [GetFilterList](get-filter-list.md) and `QW_Get_Item_Add_Edit`, which key on the *label* — so a
+  screen that has just used the label to fetch the filter list has the wrong string in hand.
+  Code and label both come off `QW_Login`'s `Item_type[]` (`Code` / `Label`).
+- **The version must be the ITEM's own version**, not the panel/parent's. A filter, like a child
+  item, can live in a different project/version — pass the version stored alongside *that* filter.
+- **Two different item paths exist.** `/items/view` is the older one and can resolve to the wrong
+  page on current tenants; **`/QPackItems/view` is the one to use** for a single item. The
+  **listing** route is `/items/listing` (there is no `QPackItems` listing).
+- **A wrong or missing part does not error** — Orcanos serves a page (its root, or an empty
+  listing), which reads to the user as "the button is broken". Build the link only when every
+  part is present, and render nothing otherwise.
 
 ---
 

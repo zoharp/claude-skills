@@ -12,6 +12,7 @@
 | **[TC]** | `04.3.2 Training Management — Training Coordinator Cookbook Rev 2.pptx.pdf` (27 slides) | Broader coverage — manual launches, use cases, dashboards. Used wherever [RU] is silent. |
 
 | **[PO]** | Product owner (Zohar), 2026-08-25 | **OVERRIDES BOTH.** Decisions in §0.1. |
+| **[LIVE]** | Measured against orca60, 2026-08-25 (filters 865/866/867/868) | **Beats every deck on facts** — field names, codes, status values. §2.3. |
 
 Citations below are `[RU p6]`, `[TC p14]`, etc. **Conflicts and their resolutions are listed in §11** —
 read that section before trusting any single bullet.
@@ -28,7 +29,7 @@ Confirmed 2026-08-25. Where these touch anything below, **they win over both dec
 | 2 | **`Roles` and `Job Title` are the SAME field / the same vocabulary.** | There is **one** role vocabulary, so the DMS-item side and the user side match **exactly**. No fuzzy matching. This removes the largest unknown in the estimate. |
 | 3 | **Everything is created in the Pool.** | Confirmed. Filters must be pool-scoped or they return nothing. |
 | 4 | **Approved vs pending-approved trigger — out of scope for now.** | Don't chase the preliminary setup; assume the automation fires on approval. |
-| 5 | **Previous revisions — out of scope for now.** | Only the **current / last approved** revision is evaluated. Revision history is a later phase. |
+| 5 | ~~Previous revisions — out of scope for now.~~ **SUPERSEDED 2026-08-26 [PO]: previous revisions are IN.** | The headline numbers still judge the **current / last approved** revision — and a cell now counts *only* that revision's tasks, where before every task for a (person, document) pair was pooled and an old signature read as trained. Earlier releases are kept **per document**, newest first, with a **joined-after-release exclusion** (see §2.3 Traps 6 and 7). Shipped v3.10.0. |
 | 6 | **The traceability-matrix design and code stay as they are for now.** | Record findings here; do **not** edit `design/DESIGN_TRAINING_MANAGEMENT.md` or the code until discussed. |
 
 ### The Missing-task rule *(authoritative definition)*
@@ -44,9 +45,28 @@ MISSING(user, dms_item)  ⟺
 Everything the tool reports as ❓ Missing is this predicate and nothing else.
 The identity join is the one in §2.1 Trap 1 — get it wrong and **every** user reads as untrained.
 
+**"The task covers this dms_item" is scoped by REVISION** (2026-08-26). A task counts toward the
+current requirement only when its revision is **not older** than `last_approved_revision` — a
+signature on a superseded release is untrained in audit terms. "Not older" rather than "equal" is
+deliberate: a wave raised on a revision still in routing is legitimate (§2.3 Trap 6).
+
+On a **previous** revision the predicate gains a date gate, because the audience is historical:
+
+```
+MISSING(user, dms_item, previous_revision)  ⟺
+      the role intersection holds  (as above)
+  AND ∄ TRN_TSK on that revision
+  AND USRP.[Created / Joining date]  ≤  the revision's date      ← they were here
+```
+
+A user whose profile **postdates** the revision is *not yet joined* — reported, never counted as
+missing. Where either date is unreadable the answer is **unknown**: guessing one way invents a
+finding, the other hides one. The current revision is deliberately **not** date-gated — whoever
+holds the role today owes today's revision, however recently they arrived.
+
 > **Parked, not dropped:** the DMS item also carries a **`Trainees`** field naming individuals
 > directly [RU p5]. A named trainee with no task is missing by the same logic, but is **outside the
-> v1 rule above**. Revisit when previous revisions are taken on.
+> v1 rule above**.
 
 > [RU p11] names two further decks in the same family that we do **not** have:
 > **Training Management Basics (Preliminary)** and **Formal Training**, plus a **User Profile** deck.
@@ -162,14 +182,223 @@ revision = re.findall(r"\(([^()]*)\)", inner)[-1]   # A.2
 |---|---|
 | **Anchor on the key pattern**, not on `"Read and understand"` | That prefix is **template text** — renameable and localisable per tenant. Matching it makes the link break on a customer who renamed their template |
 | Take the **last** `[...]` pair and the **last** `(...)` group | A document name may itself contain `:`, `(` or `[` |
-| **Cross-check** the parsed `user_id` against `TRN_TSK.[Assigned To]` | Two independent sources for the same fact; a disagreement is a real data problem, not something to silently pick a winner on |
+| **Never take the person from the name** — use `TRN_TSK.[Assigned To]` | ⚠️ **Measured, 2026-08-26**: they disagree on real data, and the **name is the wrong one**. See Trap 5 below |
 | **Prefer the real field when populated** — `DMS Items List` / `Related DMS Item` | A field is structured data; a name is a rendering of it. Read both while prototyping and log the disagreement rate, so name-parsing can be dropped once the field proves reliable |
+
+### 🚨 Trap 5 — the user id in the name is NOT the person the task belongs to
+
+The bracket's first token looks exactly like a login and reads as authoritative. It is **template
+text naming whoever the task was raised for**, and it can differ from the account the task is
+actually assigned to.
+
+Measured on orca60: `TRN_TSK-21810` / `21714` / `24906` / `21707` are named
+`Read and understand [zohar , DMS-12677 : … ]` but carry **`Assigned_to: "orca"`** — and `orca` is
+exactly Zohar Peretz's `USRP.Assigned_to`. Joining on the name matched **no profile**, so the report
+said he had *no task* on every document he is in fact signed on. Nothing errors; the grid renders
+cleanly and states the opposite of the truth.
+
+> **`TRN_TSK.[Assigned To]` is the identity join. The name supplies only the DMS key + revision.**
+
+**And a filter only returns the columns it SELECTS.** `Assigned_to` is a real, populated field on
+`TRN_TSK`, but orca60's filter **867 does not return it** — which is how it was first (wrongly)
+recorded as "empty on all 1031 tasks". Fetch it per item with `QW_Get_Item_Add_Edit` to check what
+the field really holds before concluding a field is empty. If the column is missing from the filter,
+**say so in the report and name the filter to fix** rather than falling back silently.
 
 > ⚠️ **Only the R&U template names tasks this way.** A manually created or formal-training task
 > (§8) has a free-text name and **will not parse** — for those, the DMS link must come from the field.
 
 > 💡 **The revision comes free.** `A.2` is in the name, so per-revision matching costs nothing —
 > the deferred revision-history work ([PO] §0.1 #5) is cheaper than it looked.
+
+---
+
+## 2.3 Verified against live orca60 — the actual field names
+
+Pulled 2026-08-25 from filters 865 / 866 / 867 / 868. **These are measured, not inferred.**
+
+### Response shape
+
+`QW_Get_Filter_Results` returns `Data[].Object[].Field[]`, and each field is:
+
+```json
+{ "Name":"usrp_job_title", "Title":"Job Title", "Text":"Developer",
+  "Type":"text", "Visible":"Y", "Order":"3", "Section":"" }
+```
+
+| Trap | |
+|---|---|
+| The **value is `Text`** | not `Value` — reading `Value` yields `None` for every field and looks like empty data |
+| The **human label is `Title`** | so a tenant's custom field names are **auto-discoverable** (`CS210` → `"Roles"`). §2.1 Trap 2's field mapping does **not** have to be hand-configured — match on `Title` |
+| **Item type is `DMS`** | not `DMS_ITEM`. `DMS_ITEM` returns *"No results found"* — a silent empty, not an error |
+
+### The fields that matter
+
+| Source | Field `Name` | `Title` | Use |
+|---|---|---|---|
+| **DMS** (865, ver 363) | `CS210` | **Roles** | the role edge |
+| | `CS194` | Trainees | named individuals (parked) |
+| | `last_approved_revision` | Last Approved Revision | the released revision — a bare **letter** (`C`), while a task name says `C.1` ⚠️ **Trap 6** |
+| | `DMS_Revision` · `DMS_Routing_State` | Revision · Routing State | `DMS_Revision` is the *working* revision and can be **ahead** of the approved one — Trap 6 |
+| | `DMS_Routing_End_Date` | **Approved Date** | when the **current** revision was approved. No equivalent exists for earlier ones — Trap 7 |
+| | *(varies)* | **Training List** | the `TRN` attached to this document ⇒ **training is configured for it**. Renders as the literal words **`Not set`** when empty — see Trap 8 |
+| | `User_Prefix` | — | the key, `DMS-26533` |
+| **USRP** (866, ver 448) | `usrp_job_title` | **Job Title** | the role edge |
+| | `Assigned_to` | **Assigned To** | **the user id** (`Quincy.Angel`) — §2.1 Trap 1 |
+| **TRN_TSK** (867, ver 448) | **`Assigned_to`** | **Assigned To** | **the user id — THE identity join** (§2.1 Trap 1, §2.2 Trap 5). ⚠️ **not returned by filter 867** — the field is populated, the filter just doesn't select it; add the column |
+| | `Obj_name` | Name | carries the DMS key + revision (§2.2). **Its user id is NOT the assignee** — Trap 5 |
+| | **`DMS_Routing_State`** | Routing State | **← signed/not-signed lives HERE** |
+| | `Obj_status` | Status | **NOT a progress field** — see below |
+| | `DMS_Routing_Due_Date` | Routing Due Date | overdue |
+| | `CS218` | Training List | the parent `TRN` |
+| **TRN** (868, ver 448) | `CS210` / `CS194` | Roles / Trainees | the formal-training edge |
+
+### 🚨 Trap 6 — the two sides spell a revision differently *(verified orca60 2026-08-26)*
+
+A revision is the identity of a release, and training is owed **per release** — but the two sides
+that have to be joined do not agree on how to write one:
+
+| Side | Field | Value |
+|---|---|---|
+| **DMS** | `last_approved_revision` | `C` — a bare **letter** |
+| **TRN_TSK** | inside `Obj_name` | `C.1` — **letter + minor**, e.g. `… : SOP Template  (A.2) ]` |
+
+`"C" == "C.1"` is false, so a direct string comparison matches **nothing** and every document
+reads as untrained on its own current revision — with no error anywhere. **Join on the letter.**
+`C.1` and `C.2` are both revision **C**.
+
+Measured on orca60: 729 of 1031 tasks carry a revision (the other 302 are formal-training tasks
+whose names don't parse at all, §2.2). 33 of 85 documents have tasks spanning more than one
+revision; the longest run is 10 (`DMS-12768`, B→K).
+
+Two further traps behind that:
+
+1. **Validate the revision's SHAPE** (`^[A-Za-z]{1,3}(\.\d{1,3})?$`). The parse takes the *last*
+   parenthesised group in the task name, so a document called `Cleaning SOP (EMEA region)` donates
+   a release called "EMEA region" if you don't.
+2. **A task's revision can be NEWER than `last_approved_revision`.** Four orca60 documents have
+   their whole training wave on a revision still in routing — `DMS_Revision` = C while
+   `last_approved_revision` = B, because the wave is raised before approval completes. Treating
+   "current" as an exact match reports every trainee on those documents as untrained. Current
+   means **not older**.
+3. **Not every tenant selects BOTH revision columns**, and the two field roles then resolve to
+   the **same** column. Comparing it with itself makes every document look mid-routing — so
+   whenever you surface "current vs approved", drop the comparison when both roles resolve to
+   one field name. Compare by **letter** (`rev_major`), or `B.2` reads as ahead of `B`.
+4. **Surfacing the working revision is safe; scoring on it is not.** `DMS_Revision` is useful to
+   *show* (a row reading *Rev B* is otherwise mistaken for a document untouched since B), but the
+   audience owes the **approved** revision — an unapproved release has been read by nobody yet.
+
+### 🚨 Trap 7 — there is no revision history, and no profile date, in a filter result
+
+Nothing in Orcanos' filter output says when a *previous* revision was released. A DMS row carries
+only the **current** revision's approval date (`DMS_Routing_End_Date`, Title *Approved Date*). The
+only evidence a superseded revision ever existed is **its tasks**, so date it by them: earliest
+task `Created Date`, else earliest `DMS_Routing_Due_Date` as a flagged proxy (due = created + N ⇒
+late, not wrong).
+
+Likewise a **User Profile has no date column** in filter 866 — but `Created Date` **is** on the
+item (`QW_Get_Object` → field `Name: "Created Date"`, e.g. `11/7/2021 2:39:37 PM`). Reading them
+per item is affordable precisely because the User Profile filter is the ceiling on the whole
+report; on orca60 all 6 resolve in one concurrent pass.
+
+⚠️ **The date format differs by endpoint.** A **filter result** is day-first (`23/09/2021` —
+first component observed up to 31, second never above 12). **`QW_Get_Object` is month-first** with
+a 12-hour clock (`4/26/2021 12:50:08 PM`). One build consumes both, so detect the order per source
+from the corpus rather than assuming; where every value fits both readings, say so. Guessing wrong
+shifts a date by up to eleven months.
+
+⚠️ **Carry a date TWICE if you both show it and compare it.** `DMS_Routing_End_Date` is the only
+date available to range documents over (there is no other approval date, and none at all for a
+superseded revision). Anything user-facing must print it **exactly as the tenant rendered it** —
+reformatting it means picking an order, and picking wrong moves the date. Keep the parsed ISO
+form as a separate value and compare only that. A value that will not parse is **reported**, not
+excluded silently: it simply cannot be placed in any range.
+
+### 🚨 Trap 8 — a document that owes training but cannot be scored is invisible
+
+The role intersection needs a document to name **at least one role** and to have an **approved
+revision**. A document failing either is not "compliant" — it is **unmeasurable**, and the two
+read identically unless you separate them:
+
+| Fails | Meaning |
+|---|---|
+| no `Roles` | **nobody can ever be trained on it.** Orcanos has no tasks to report on, so it complains about nothing — the most complete failure of the lot |
+| no `Last Approved Revision` | nothing released for anyone to train on (yet) |
+
+⚠️ **Gate that list on the document's `Training List` field**, or it is a copy of the DMS filter
+rather than a set of findings: most of a controlled library is forms and leaflets nobody trains
+on (orca60: 55 of 333 documents are in scope at all).
+
+⚠️ **`Not set` is a VALUE.** Orcanos renders an unset link field as those literal words, so
+`if (value)` reads every un-configured document as *training is configured* — exactly backwards.
+
+⚠️ **The field id is not portable.** `CS218` is the Training List on **`TRN_TSK`**; a `CS…` id is
+per-tenant *and* per-type, so resolve this one by **`Title`** only. Binding it by id on `DMS`
+silently reads whatever custom field happens to occupy that id.
+
+⚠️ **If the filter has no Training List column, list nothing and name the column.** Guessing
+turns most of the library into findings, and *"0 documents are missing their roles"* is a
+different claim from *"this cannot be determined"*.
+
+*(Recorded 2026-08-27 from the traceability-matrix v3.19.0 build. The behaviour of the
+DMS-side field — that it is titled *Training List* and reads `Not set` when empty — follows the
+product owner's description and the `TRN_TSK.CS218` precedent; it has **not** been measured
+against a live orca60 DMS filter that selects the column.)*
+
+### 🚨 Trap 3 — "signed" is `DMS_Routing_State`, **not** `Obj_status`
+
+Measured over 1031 live tasks:
+
+| `DMS_Routing_State` | n | | `Obj_status` | n |
+|---|---|---|---|---|
+| In Work | 913 | | In Process | 914 |
+| **Approved** | **59** | | Read And Understand | 60 |
+| Draft | 58 | | Draft | 57 |
+| Cancel | 1 | | | |
+
+They look interchangeable and are not. **`Obj_status` "Read And Understand" is the task *category*, not a completion state** — one task is `Draft` + `Read And Understand`, i.e. never launched but would count as signed.
+
+```
+signed      ⟺  DMS_Routing_State == "Approved"
+open        ⟺  DMS_Routing_State == "In Work"
+not launched⟺  DMS_Routing_State == "Draft"      (template — exclude)
+dead        ⟺  DMS_Routing_State == "Cancel"     (not a live obligation)
+```
+
+### 🚨 Trap 4 — a signed task can be invisible to the report
+
+Live reconciliation of all **59** signed tasks against the computed matrix:
+
+| n | Where it went |
+|---|---|
+| **32** | **the user has no `USRP` record** |
+| 11 | counted in the matrix ✅ |
+| 10 | task name doesn't parse — formal training (§2.2) |
+| 3 | the document isn't returned by the DMS filter |
+| 3 | the user's role isn't on that document (trained as a named *Trainee*, not by role) |
+
+> **The User Profile filter is the ceiling on everything.** orca60's filter 866 returns **6** profiles
+> while at least **10** people hold tasks (`zohar` 130, `Testing` 102, `Orcanos.Support` 62,
+> `marketing` 17 — ⚠️ **these counts are name-derived**, and the name is not the assignee (Trap 5);
+> the `zohar`-named tasks are assigned to `orca`). A person with no `USRP` record cannot appear —
+> not as trained, not as missing.
+> **Always reconcile signed-task totals against the matrix and report the difference**; a matrix that
+> quietly drops half the evidence is worse than no matrix.
+
+### Scale of the real data (orca60)
+
+| | |
+|---|---|
+| DMS items | **340** — of which 121 have an approved revision, **66 have Roles set**, 61 both |
+| User profiles | **6** (3 distinct job titles; 1 profile has none) |
+| Training tasks | **1031** — 729 parse by name, 302 don't |
+| Roles named on documents | **14** — only **3** have any user profile behind them |
+
+> **Page everything.** 1031 tasks needed 6 requests at 200/page. The task filter has **no `FILTER_BY`
+> to narrow it**, so it must be read whole — the same unbounded-fetch shape that caused this repo's
+> v3.6.2 bug, where a silent 500-item cap made one customer's data look empty. **A truncating page cap
+> must log, never truncate quietly.**
 
 ### Why *both* `DMS_ITEM` and `TRN` carry roles *(inference — confirm)*
 
@@ -489,14 +718,16 @@ Resolved by the precedence rule in §0 — **[RU] governs**.
 
 ## 12. Implications for the Training Traceability tool
 
-> 🔒 **The design doc and code are frozen for now** ([PO] §0.1 #6). This section is a **findings
-> register** for the next design discussion — do not act on it yet.
+> **Now being built.** The consuming project is the **traceability-matrix** repo:
+> `design/DESIGN_TRAINING_MANAGEMENT.md` **§0 START HERE** holds the build handoff (verified data
+> model, config-screen spec, filter ids, scope), and `CLAUDE.md` **Critical Note #24** carries the
+> traps. This section is the findings register behind those.
 
 | # | Finding | Status |
 |---|---|---|
 | 0 | **The identity join is `Assigned To` (user id), not the `USRP` work-item id** — §2.1 Trap 1 | 🚨 **Highest-risk detail in the build.** Wrong ⇒ zero tasks match, every user reads untrained, no error raised |
 | 0b | **Field names vary by tenant** (`Roles` / `Job Titles`, `Training Records List`) — §2.1 Trap 2 | ⚠️ Needs **configurable field mapping** per install. This is exactly what the design's per-slot field-mapping step is for |
-| 0c | **Two role edges:** `DMS_ITEM.Roles` and `TRN.Roles`, both → `USRP.Roles` | 📋 v1's Missing rule uses the **DMS** edge. The `TRN` edge is likely the **formal-training** audience (no document) — see §2.1 |
+| 0c | **Two role edges:** `DMS_ITEM.Roles` and `TRN.Roles`, both → `USRP.Roles` | ✅ **Confirmed and built** (traceability-matrix v3.22.0). The `TRN` edge **is** the formal-training audience, and it is `TRN.Roles` **∪ `TRN.Trainees`** — a formal training is routinely aimed at named people, so roles alone reports a correctly-run training as having nobody to train. Both populations are scored into one list, tagged by source. See §12.1 |
 | 1 | **One role vocabulary.** `Roles` (DMS item) and `Job Title` (user) are the same field, so the join is an **exact match** | ✅ **Resolved** by [PO] §0.1 #2. The fuzzy-match contingency is off the table — this was the biggest unknown in the estimate |
 | 2 | **Scope is the current / last approved revision only** | ✅ **Set** by [PO] §0.1 #5. Revision history deferred |
 | 3 | **Records and tasks are created in the POOL, not the tree** [RU p3, p8, p9], confirmed [PO] §0.1 #3 | ⚠️ **Live trap.** A tree-scoped filter returns **zero** and reads as an empty tenant. The shipped dashboards scope tasks to *All Pool (Backlog) Items* and template records to *All View (w/o Pool) Items* [TC p26] |
@@ -505,7 +736,81 @@ Resolved by the precedence rule in §0 — **[RU] governs**.
 | 6 | **`% Completion` and `# Tasks` already exist on the record** [TC p11] | 📋 Cheaper roll-up than assumed — but it counts **created** tasks only, so it can never surface a missing one. The gap stays ours to compute |
 | 7 | **Launch requires an approved revision** [RU p8] | 📋 A document with no approved revision is **not** a gap. Excluding it kills a whole class of false findings |
 | 8 | **Existing dashboards already cover the easy views** [TC p26] | 📋 *Courses Topics*, *Trainers*, *Annual Training Plan*, *Employee Training Plan Execution Status*. Don't rebuild them — the differentiator stays the computed expected-set and ❓ Missing |
-| 9 | **`Trainees` (named individuals) is a second audience** alongside `Roles` [RU p5] | ⏸️ **Parked** by [PO] §0.1 — outside the v1 Missing rule. Revisit with revision history |
+| 9 | **`Trainees` (named individuals) is a second audience** alongside `Roles` [RU p5] | ✅ **Built for FORMAL training** (v3.22.0, §12.1). Still parked on the **DMS** side, where the audience remains `Roles` alone |
+
+---
+
+## 12.1 Formal training — the three differences that fail silently
+
+*(Built in traceability-matrix **v3.22.0**, 2026-08-27. Engine `training_engine._formal_rows`;
+traps distilled in that repo's `CLAUDE.md` Critical Note **#26**; full reference
+`docs/TRAINING_TRACEABILITY.md` §4.8. ⚠️ The field patterns follow the join documented here and
+the `CS218` precedent of §2.3 — they have **not** been measured against a live `TRN` filter
+response.)*
+
+A `TRN` is scored exactly as a `DMS_ITEM` is — audience × people, one cell each. Three things
+differ, and each one renders a clean, plausible, wrong report:
+
+| # | Difference | What breaks if it is got wrong |
+|---|---|---|
+| 1 | **Audience is `Roles` ∪ `Trainees`** | Roles alone reports a correctly-run training as having nobody to train |
+| 2 | **The task → record link is `TRN_TSK.[Training List]`** (§2.1 edge 3) | A formal task's **name is free text and parses to nothing** (§2.2) — the 302 of 1031 orca60 tasks. Without that column **every** record reads as though nobody was trained |
+| 3 | **The record's completion is signed INDEPENDENTLY of its tasks** | Letting it mark people trained is a **fabricated pass** — the worst output a training report can produce |
+
+### On difference 3 — the product owner's rule
+
+> *"the TRN has 2 fields that show # of tasks, # of completed tasks. The completion I talk about
+> here is the TRN completion (actually regardless of the tasks) since it is signed independently."*
+> — [PO] 2026-08-27
+
+So `completed` ⟺ **the completion date is set**, and nothing else. It is carried *beside* each
+person's own task state, never folded into it, **precisely so the two can disagree** — a record
+signed off complete while trainees still owe is a **finding**, and only carrying both values can
+show it.
+
+`# Tasks` / `# Completed Tasks` [TC p11] are shown beside the computed figures and never in place
+of them: they count **created** tasks, so they can never surface a missing one (finding 6).
+
+### On difference 1 — `Trainees` is rendered NAMES, not references
+
+`Omri Geva (Customer Success Manager), Orcanos. Tech (Administrator)` [RU p5]. So:
+
+- split on `,` `;` `|` **only outside parentheses** — a role suffix may itself read *"Manager, Quality"*
+- strip the trailing parenthesised group; it is the rendered role, not part of the identity
+- match **exactly, after normalising to letters and digits only**: `Orcanos. Tech` ≡ the user id
+  `Orcanos.Tech` is a *formatting* difference; `Ada Lovelace` vs `Ada L` is **not** a match
+- a trainee matching no `USRP` is **reported by name**, never joined — same rule as §2.1 Trap 1's
+  near-miss discipline. The User Profile filter is the ceiling on everything (Trap 4)
+
+Anyone in scope **only** by name belongs in their own reported column (`(named individually)`),
+not folded under a role the record never named — that would misstate *why* they owe it.
+
+### On difference 2 — resolving the link value
+
+The field renders in several shapes. Resolve the id **anchored at the start**:
+
+```
+TRN-21803               -> 21803
+21803-Setting up the lab -> 21803
+21803                   -> 21803
+Lab safety (TRN-21803)  -> 21803      (fallback: a KEY-shaped token anywhere)
+Setting up the lab 2024 -> None       ⚠️ a leading NAME must not donate a stray number
+Not set                 -> None       (§2.3 Trap 8 — "Not set" is a VALUE)
+```
+
+> A task silently attached to the **wrong** record is worse than one attached to none.
+
+⚠️ **`Assigned To` is load-bearing here in a way it is not for R&U.** An R&U task can fall back to
+the user id inside its name (§2.2 Trap 5 — badly, but it resolves *someone*); a formal task has no
+name to fall back to, so without that column the task belongs to **nobody**.
+
+### And one thing a record is not
+
+A `TRN` is an **event, not a versioned document** — it has no revision axis, so none of §2.3
+Trap 6 applies to it, and it must never be reported as *"not approved yet"*. A record naming
+neither a role nor a trainee is its own finding (*nobody can ever be trained on it*), and unlike a
+document it needs **no `Training List` gate** (Trap 8): a `TRN` in the training-records filter
+**is** a training, whereas most of a controlled document library is not.
 
 ---
 

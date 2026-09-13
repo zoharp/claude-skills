@@ -54,6 +54,26 @@ The `### Current versions` block in `CLAUDE.md` must be updated on every bump:
 - **Frontend:** `X.Y.Z`
 ```
 
+## The detailed changelog entry — NOT in CLAUDE.md
+
+The long-form entry (Changes / Mechanism / Verified / Files Modified / Schema) goes in the
+project's **changelog file**, never in `CLAUDE.md`.
+
+`CLAUDE.md` is loaded into **every** session, and Claude Code caps that at **150,000 chars**.
+Release history is reference read on demand, so it does not belong there — in the traceability-matrix
+project it had grown to **313,180 chars, 76% of the file**, pushing it to 411 KB (2.8× the limit) and
+burning ~100k tokens per session on history that was almost never relevant.
+
+**Where the entry goes** — check the project's own convention first:
+- **traceability-matrix:** `docs/changelog/CHANGELOG-v{major}.md`, prepended newest-first, **plus**
+  its one-line row in `docs/changelog/README.md`
+- otherwise: the repo's `CHANGELOG.md`, or create `docs/changelog/` following the above
+
+**What stays in `CLAUDE.md`:** the `### Current versions` block, and — only when the release
+uncovered a trap that fails *silently* — a new numbered **Critical Implementation Note**. That note
+is the distilled, always-loaded form of what the changelog entry records at length. A release that
+merely worked as intended adds no note.
+
 ## SCHEMA.md — schema sync
 If the change involved any of the following, update the corresponding section in `SCHEMA.md`:
 - New or modified tables / columns
@@ -65,4 +85,7 @@ If the change involved any of the following, update the corresponding section in
 - [ ] Version bumped in changed component(s)
 - [ ] `CLAUDE.md` → `### Current versions` updated
 - [ ] `release_notes.json` prepended with new entry (icon + **bold label** — detail)
+- [ ] Long-form entry prepended to the **changelog file** (`docs/changelog/CHANGELOG-vN.md`), **not** `CLAUDE.md`
+- [ ] Its one-line row added to `docs/changelog/README.md`
+- [ ] A new **Critical Note** in `CLAUDE.md` only if the release exposed a silent-failure trap
 - [ ] `SCHEMA.md` updated if schema changed

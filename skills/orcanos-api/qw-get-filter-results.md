@@ -185,7 +185,7 @@ Each item's `Field` is an array of field objects:
 
 | Property | Meaning | Use |
 |---|---|---|
-| `Name` | `table.field` name (e.g. `Obj_name`, `DMS_Revision`) | **Match on this** — stable across tenants |
+| `Name` | `table.field` name (e.g. `Obj_name`, `DMS_Revision`) | **Match on this** — stable across tenants. ⚠️ **Unless it starts with `CS`** — that's a per-tenant custom slot; see below |
 | `Title` | Human-readable label | Display to user (tenant-customisable — unsafe as a key) |
 | `Text` | The value. For some picklists the internal code, for others already the label | Varies per field |
 | `Display_text` | Picklist label (when present) | **Prefer this for display** |
@@ -193,6 +193,34 @@ Each item's `Field` is an array of field objects:
 | `Visible` | `Y`/`N` — belongs in a user-facing field list | Hide `N` (`ID`, `IsLink`) |
 | `Order` | Position in the **field catalogue** | ⚠️ **Alphabetical by `Title`** — never use it for column order |
 | `Web_order` | Grid column order — **non-unique**, `null` off-grid | See the stable sort below |
+
+### ⚠️ A `Name` starting with `CS` is a CUSTOM field, not a system field
+
+Every field object falls into one of two classes, and the `Name` tells you which:
+
+| `Name` | Class | Match on |
+|---|---|---|
+| `CS354`, `CS21`, `CS1027`, … (`CS` + digits) | **Custom field** — a per-tenant slot | `Title` |
+| Anything else (`Obj_name`, `DMS_Revision`, `traced_items_list`, …) | **Orcanos system field** — stable everywhere | `Name` |
+
+```js
+const isCustomField = f => /^CS\d+/i.test(f.Name || '');
+```
+
+Why it matters: **the slot number is assigned per tenant.** `CS354` is *Signers List* on orca60 and
+may be an entirely unrelated field on the next account. Code that matches `f.Name === 'CS354'` works
+on the tenant it was written against and silently reads the wrong column — or nothing — on every
+other one. No error; just a wrong or blank value.
+
+So:
+- **Never hard-code a `CS<n>` name.** Match the custom field on its `Title`, or resolve the
+  slot→meaning mapping for that tenant from
+  [QW_Get_Item_Add_Edit](qw-get-item-add-edit.md).
+- **Never persist a `CS<n>` name** in config, a saved panel, or a cache that another account reads.
+- The inverse holds for system fields: their `Name` **is** stable, while `Title` is
+  tenant-customisable — so match those on `Name`, never on `Title`.
+- A field not listed in the dictionary is custom *by definition* — but only a `CS`-prefixed `Name`
+  says so from the response alone.
 
 > 📖 **[filter-result-fields.md](filter-result-fields.md) documents all ~46 system fields** —
 > what each one means, which sentinel counts as "empty", the tree-vs-trace fields, the routing /
