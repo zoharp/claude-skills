@@ -1,0 +1,342 @@
+{
+  "meta": {
+    "product": "<Product name>",
+    "short_name": "<Short name>",
+    "product_version": "<x.y.z>",
+    "base_system": "Orcanos ALM / QMS — validated separately under its own validation package",
+    "revision": "0.1",
+    "status": "Draft for review",
+    "date": "<YYYY-MM-DD>",
+    "doc_prefix": "VAL-<CODE>"
+  },
+  "plan": {
+    "purpose": "<What this package shows, for which product; organised by module.>",
+    "intended_use": "<Who uses the product, for what decision, and what stays in Orcanos as the system of record.>",
+    "validation_not_verification": "Verification asks “was the software built to its specification?” — the developer's unit, integration and automated end-to-end tests answer it, and they are not repeated here. Validation asks “does it meet the user's need in real use?” Every test in this package is therefore run through the normal user interface, on a production-equivalent installation connected to a real Orcanos account, against a defined test data set, and its result is checked against Orcanos itself as the independent source of truth.",
+    "base_system_reliance": "Orcanos ALM / QMS is covered by its own validation package, including most 21 CFR Part 11 controls: user identity and passwords, electronic signatures, the record audit trail, workflow enforcement, record retention and permissions. This package relies on that work and does not re-test it. It tests that the add-on uses those functions correctly in the user's workflow, and it assesses the few records the add-on keeps itself (section 4).",
+    "approach": "Risk-based, following FDA Computer Software Assurance and GAMP 5 (2nd ed.). The add-on is used as evidence in design reviews and audits (21 CFR 820 / QMSR, ISO 13485 §4.1.6 and §7.3), so the failure that matters most is a result that looks right but is not — a missing trace shown as present, an unflagged gap, an incomplete export. Each user requirement carries a risk level that sets how it is tested.",
+    "risk_levels": [
+      {
+        "level": "High",
+        "meaning": "A wrong result could be relied on as compliance evidence without being noticed.",
+        "assurance": "Scripted, automated test; every step with expected result and screenshot; result compared against Orcanos through its API; produced files kept."
+      },
+      {
+        "level": "Medium",
+        "meaning": "A failure is visible to the user, or is backed by a validated Orcanos control.",
+        "assurance": "Scripted, automated test with expected results and a screenshot per step."
+      },
+      {
+        "level": "Low",
+        "meaning": "Convenience function; no effect on a record or a decision.",
+        "assurance": "Unscripted / exploratory testing, summarised in the report."
+      }
+    ],
+    "automation": "Every validation test is automated with Playwright: a real browser drives the real user interface exactly as a user would, on a production-equivalent installation connected to a real Orcanos account. Expected results are checked against Orcanos through its own API, by test code that is independent of the add-on's code. Automation is only the execution method — the tests stay validation tests: they follow the intended use end to end, from the user's side, not internal units. Each step stores a screenshot; produced files and the Orcanos data used for comparison are kept with the run. A person reviews the evidence and approves the test report.",
+    "execution_rules": [
+      "Tests run in the order of the protocol (STD); later tests use the panel created by VT-005.",
+      "Every run gets its own results folder (results.json + evidence). Results are never edited by hand; the test report prints the SHA-256 of results.json.",
+      "A test passes only if every one of its steps was checked and passed. A test that cannot start because a prerequisite is missing is Blocked, never Pass.",
+      "A failed or blocked test needs a deviation record — description, impact on the requirement, resolution — before the report is approved. A re-run after a fix creates a new run.",
+      "Long real-time tests (the 45-minute idle time-out) run only when explicitly included; the report shows them as Not run otherwise.",
+      "The person approving the report must not be the developer of the feature under test."
+    ],
+    "roles": [
+      {
+        "role": "Validation lead",
+        "duty": "Owns this package; keeps URS, SRS and STD in step with the product; prepares the test data set."
+      },
+      {
+        "role": "Test executor",
+        "duty": "Starts the automated run on the validation environment; reviews the screenshots and files of every step; raises deviations."
+      },
+      {
+        "role": "QA reviewer",
+        "duty": "Reviews the package and the evidence; confirms deviations are resolved."
+      },
+      {
+        "role": "QA / RA approver",
+        "duty": "Approves the plan before execution and the report after it."
+      }
+    ],
+    "out_of_scope": [
+      "The Orcanos ALM / QMS base system (own validation package).",
+      "Developer verification (unit, integration, API tests in the repository's tests/ folder).",
+      "Installation qualification of an on-premise IIS server (covered by the deployment procedure).",
+      "Modules marked Planned below, until their section is written."
+    ]
+  },
+  "environment": [
+    {
+      "item": "Add-on URL and version",
+      "value": "Recorded automatically per run in the test report (STR)."
+    },
+    {
+      "item": "Orcanos account (validation tenant)",
+      "value": "Recorded per run; a dedicated validation account or project, never a customer's production data."
+    },
+    {
+      "item": "Browser",
+      "value": "Chromium, driven by Playwright; version recorded per run."
+    },
+    {
+      "item": "Configuration",
+      "value": "validation/config.json (not in source control); passwords only in environment variables."
+    }
+  ],
+  "run_order": [],
+  "modules": [
+    {
+      "id": "<MOD>",
+      "name": "<Module name>",
+      "status": "in-scope",
+      "file": "modules/<module>.json",
+      "summary": "<one line>"
+    },
+    {
+      "id": "<MOD2>",
+      "name": "<Module not yet written>",
+      "status": "planned",
+      "summary": "<one line>"
+    }
+  ],
+  "compliance": {
+    "part11": {
+      "intro": "21 CFR Part 11 applies to electronic records and signatures kept under FDA predicate rules. Most of its controls are provided by Orcanos ALM / QMS and are covered by the Orcanos validation package; they are marked “Base”. The product is assessed for what it adds: <list the records it keeps itself, and whether it applies e-signatures>.",
+      "legend": "Base = met by Orcanos, covered by its validation · Met = met by the add-on, evidence cited · Partial = met in part, open item named · Gap = not met, open item · NA = not applicable.",
+      "rows": [
+        {
+          "clause": "11.10(a)",
+          "requirement": "Validation of systems to ensure accuracy, reliability, consistent intended performance.",
+          "base": "Orcanos validation package.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(b)",
+          "requirement": "Accurate and complete copies in human-readable and electronic form.",
+          "base": "Orcanos reports and exports.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(c)",
+          "requirement": "Protection of records for accurate and ready retrieval throughout the retention period.",
+          "base": "Orcanos is the system of record for items, traces, documents and signatures.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(d)",
+          "requirement": "Limiting system access to authorised individuals.",
+          "base": "Orcanos user accounts and passwords.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(e)",
+          "requirement": "Secure, computer-generated, time-stamped audit trail of record creation, change and deletion.",
+          "base": "Orcanos audit trail on items, traces, documents and signatures. Items and traces the add-on creates go through the Orcanos API under the user's own login, so Orcanos audit-trails them.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(f)",
+          "requirement": "Operational system checks to enforce permitted sequencing of steps and events.",
+          "base": "Orcanos workflows and routing.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(g)",
+          "requirement": "Authority checks — only authorised individuals can use the system, sign, alter records or perform the operation.",
+          "base": "Orcanos permissions per item type and project.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(h)",
+          "requirement": "Device checks to determine the validity of the source of data input.",
+          "base": "—",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(i)",
+          "requirement": "Persons who develop, maintain or use the system have the education, training and experience.",
+          "base": "Orcanos and customer training procedures.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(j)",
+          "requirement": "Written policies holding individuals accountable for actions under their electronic signatures.",
+          "base": "Customer procedure; Orcanos e-signature.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.10(k)",
+          "requirement": "Controls over system documentation (distribution, access, revision and change control).",
+          "base": "Orcanos document control.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.30",
+          "requirement": "Open systems: controls to ensure authenticity, integrity and confidentiality from creation to receipt.",
+          "base": "Orcanos hosting controls.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.50 / 11.70",
+          "requirement": "Signature manifestation (name, date/time, meaning) and signature-to-record linking.",
+          "base": "Orcanos electronic signatures.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        },
+        {
+          "clause": "11.100 – 11.300",
+          "requirement": "Electronic signature components, uniqueness, and controls for identification codes and passwords.",
+          "base": "Orcanos unique user IDs, password policy and signature controls.",
+          "addon": "<What the product itself does for this clause — or 'Applies no …'>",
+          "evidence": "<test IDs / doc section>",
+          "status": "<Base|Met|Partial|Gap|NA>"
+        }
+      ]
+    },
+    "ai": {
+      "intro": "Some modules offer AI assistance. AI is opt-in per account and off unless licensed. In every case the model proposes and a person decides: no AI output becomes an Orcanos record without explicit human confirmation.",
+      "features": [
+        {
+          "module": "<Module>",
+          "feature": "<AI function>",
+          "data_sent": "<exactly what the model receives>",
+          "control": "<the human step before anything becomes a record>"
+        }
+      ],
+      "controls": [
+        "Opt-in per account; hidden for accounts not licensed, and in a region where the AI service is not yet hosted locally.",
+        "The engine is chosen per account (Anthropic directly, or the Orcanos AWS Bedrock gateway).",
+        "The model has no tools: it cannot call Orcanos, the database or the network. It sees only the current account's data for the one request.",
+        "No credentials are ever placed in a prompt.",
+        "House-style prompts can be changed only by the account administrator.",
+        "Every model call is metered and costed per account."
+      ],
+      "validation": "AI output is not deterministic, so its content is not validated as correct. What is validated is the control around it: (1) nothing reaches Orcanos without explicit human confirmation; (2) AI content is labelled as such; (3) AI is unavailable to accounts that are not licensed; (4) the model receives only the data stated above. These become user requirements in the AI increment of this package. The approach follows GAMP 5 (2nd ed.) Appendix D11 and FDA Computer Software Assurance.",
+      "gaps": [
+        "<open AI items>"
+      ]
+    },
+    "security": {
+      "intro": "The full control list, with open gaps, is maintained in <docs/SECURITY_CONTROLS.md>. The summary below is the part relevant to validation.",
+      "controls": [
+        {
+          "area": "<Area>",
+          "summary": "<control>",
+          "ref": "<doc section / test>"
+        }
+      ],
+      "gaps": [
+        {
+          "id": "1",
+          "gap": "<known gap>",
+          "status": "Open"
+        }
+      ]
+    },
+    "data_integrity": {
+      "intro": "ALCOA+ as it applies to an add-on whose records are, almost entirely, Orcanos's.",
+      "rows": [
+        {
+          "principle": "Attributable",
+          "how": "Every read and write to Orcanos is made with the user's own login — never a shared or service account — so Orcanos attributes it to that person."
+        },
+        {
+          "principle": "Legible",
+          "how": "Exports are human-readable HTML and Excel; the Doc Review record is a PDF."
+        },
+        {
+          "principle": "Contemporaneous",
+          "how": "Data is read live from Orcanos; a cached view says it is cached and when it was taken; ⟳ refresh re-reads Orcanos (VT-007)."
+        },
+        {
+          "principle": "Original",
+          "how": "Orcanos holds the original record; the add-on holds caches and copies only, apart from its own records listed in section 4."
+        },
+        {
+          "principle": "Accurate",
+          "how": "Matrix content and gap flags are validated against Orcanos (URS-020, URS-021)."
+        },
+        {
+          "principle": "Complete",
+          "how": "Exports cover every page and level (URS-050)."
+        },
+        {
+          "principle": "Consistent",
+          "how": "One time base: every time the add-on records is UTC and labelled as such; Orcanos dates are shown exactly as Orcanos holds them."
+        },
+        {
+          "principle": "Enduring / Available",
+          "how": "Orcanos retention for its records; the add-on's own records on an encrypted, replicated volume with a tested restore procedure."
+        }
+      ]
+    }
+  },
+  "references": [
+    {
+      "id": "R1",
+      "title": "21 CFR Part 11 — Electronic Records; Electronic Signatures",
+      "note": "Section 4 assessment"
+    },
+    {
+      "id": "R2",
+      "title": "21 CFR Part 820 — Quality Management System Regulation (incl. ISO 13485 by reference)",
+      "note": "Validation of software used in the quality system"
+    },
+    {
+      "id": "R3",
+      "title": "ISO 13485:2016 §4.1.6 and §7.3",
+      "note": "Validation of QMS software; design and development traceability"
+    },
+    {
+      "id": "R4",
+      "title": "FDA guidance — Computer Software Assurance for Production and Quality System Software",
+      "note": "Risk-based assurance; acceptance of automated and unscripted testing"
+    },
+    {
+      "id": "R5",
+      "title": "ISPE GAMP 5, 2nd edition (2022), incl. Appendix D11 (AI / machine learning)",
+      "note": "Life-cycle approach; AI controls"
+    },
+    {
+      "id": "R6",
+      "title": "ISO/TR 80002-2:2017 — Validation of software for medical device quality systems",
+      "note": "Method for QMS-software validation"
+    },
+    {
+      "id": "R7",
+      "title": "Orcanos ALM / QMS validation package",
+      "note": "Base system — relied on, not repeated"
+    },
+    {
+      "id": "R8",
+      "title": "<project security doc>",
+      "note": "Security controls and known gaps"
+    }
+  ]
+}

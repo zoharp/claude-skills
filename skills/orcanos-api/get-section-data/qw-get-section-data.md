@@ -11,7 +11,7 @@ documents what that section's rows actually mean.
 | Section | Applies to | Doc |
 |---|---|---|
 | `Revisions` | **DMS only** | **[section-revisions.md](section-revisions.md)** — every file version of a controlled document: uploads, sign-offs, routing state, PDF renditions, ECO release |
-| `Attachments` | most types | *(not documented yet)* |
+| `Attachments` | most types | **[section-attachments.md](section-attachments.md)** — plain uploads (`FILE`) and linked documents (`DMS`); rows under `section.attachment`; `Ver_Id` load-bearing |
 | `History` | **any type** | **[section-history.md](section-history.md)** — the item's change log: one row per event, with per-field before/after diffs nested in `details[]` |
 | `Relations` | most types | *(not documented yet)* — see also [qw-get-object-relations.md](../qw-get-object-relations.md) |
 | `Defects` | most types | *(not documented yet)* |

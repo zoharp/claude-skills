@@ -166,7 +166,8 @@ Everything after the key is not part of it.
 | `MR_REQ` | User Requirement | `UR` | What the **user/market** needs. Usually the root of the trace chain. | ✅ |
 | `REQ` | Product Requirement | `PR` | What the **product** must do to satisfy the user requirement. | ✅ |
 | `SRS` | Software Requirement | `SR` | What the **software** must do. Typically traces up to a product requirement and down to tests. | ✅ |
-| `REQ_HD` | Requirement Document | — | A requirement **document/header** — the root of a containment tree (Introduction → User Requirements → …). Browsed with `Get_Children`, **not** with relations. | ✅ |
+| `REQ_HD` | Requirement header / paragraph | `PAR` | A **paragraph** of a structured document (Introduction → Functional requirements → …), under the `DOC` root. Browsed with `Get_Children`, **not** with relations. (Corrected 2026-10-27: it is not the document root — see `orcanos-documents.md`.) | ✅ |
+| `DOC` | Structured document | — | The **root** of a document outline (DOC → PAR → items). Every descendant carries its id in `Root_Document`. Not a DMS item. See `orcanos-documents.md`. | 📌 |
 
 ### 4.5 Test
 
@@ -179,11 +180,11 @@ Everything after the key is not part of it.
 
 | Code | Type | Custom | What it represents | Conf. |
 |---|---|---|---|---|
-| `DEFECT` | Defect | — | A bug or product defect. **Its name is in `Synopsis`, not `Obj_name`.** | ✅ |
+| `DEFECT` | Defect | — | A bug or product defect. **Its name is in `Synopsis`, not `Obj_name`.** It lives in its **own table**: create and update it with `QW_Add_Defect` / `QW_Update_Defect`, not `QW_Add_Object` / `QW_Update_Object` (see `orcanos-api/qw-add-defect.md`) | ✅ |
 | — | Complaint | `COMP` | Customer complaint. Commonly the entry point of a chain: Complaint → CAPA / Non-Conformance / Risk. | ◐ |
 | — | CAPA | — | Corrective and Preventive Action. Commonly traces from a complaint or non-conformance, and on to a change order. | ◐ |
 | — | Non Conformance | `NCR` | A recorded non-conformance. | ◐ |
-| — | Risk | — | A risk record (ISO 14971). Commonly traces down to the requirements that mitigate it. | ◐ |
+| — | Risk | `RISK` | A risk record (ISO 14971 / FMEA). Traces down to the requirements that mitigate it ("Risk Mitigation" link), which trace to tests. Scored by the project's FMEA settings — see `orcanos-processes/orcanos-risk-process.md`. Code confirmed live on orca60 (2026-10-07). | ✅ |
 | — | Engineering Change Order | `ECO` | A controlled change. Commonly the outcome of a CAPA. | ◐ |
 
 > All six are **real types on the orca60 tenant** — they appear in that tenant's data and in its Ask

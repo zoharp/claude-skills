@@ -153,4 +153,9 @@ else:
 - **An empty array is ambiguous** — "no filters" and "wrong ItemType" look identical. Always sanity-check the type string before concluding the tenant has none.
 - **`Name` is not unique** — always disambiguate with the `Id` in any picker.
 - **Don't over-filter on `ObjType`.** You already scoped by `ItemType` in the request; dropping non-matching `ObjType` rows client-side can hide valid `ALL` filters.
+- **Test Run can't be listed — on every tenant tried.** `400 {"Message":"Enter a valid ItemType."}`
+  for `Test Run`, `T_RUN`, `TEST_RUN`, `Test Execution`, `STD`, `Run`, … (orca60 2026-09-01; `orcanos`
+  project 102066 2026-11-04, ~25 spellings) — although the Orcanos web UI shows Test Run filters
+  (it uses an internal call, not this one). `Execution Set` answers 200 but only ALL filters. In this
+  project the wizard offers the run filters other panels **of the same project** use, else an ID box.
 - **Bare array, no `IsSuccess`.** Code that blindly reads `data["Data"]` or `data["IsSuccess"]` will break — handle the top-level list.

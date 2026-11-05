@@ -1,0 +1,98 @@
+{
+  "execution_order": "<optional note>",
+  "urs": [
+    {
+      "id": "URS-020",
+      "title": "See an accurate trace matrix",
+      "risk": "High",
+      "actor": "QA lead, auditor",
+      "feature": "The matrix lists every top-level item with the items it traces to, level by level, as they are in Orcanos at the time of the last refresh.",
+      "need": "As a QA lead or auditor, I need the matrix to show exactly the items and links that exist in Orcanos — nothing added, nothing dropped — so that I can rely on it as traceability evidence.",
+      "risk_why": "A dropped or invented link would be read as fact in a design review."
+    }
+  ],
+  "srs": [
+    {
+      "id": "SRS-020.1",
+      "urs": "URS-020",
+      "text": "The L1 rows are exactly the items the L1 filter returns in Orcanos — none added, none left out — across all pages."
+    },
+    {
+      "id": "SRS-020.2",
+      "urs": "URS-020",
+      "text": "An item is shown under a parent if and only if the parent traces to it in Orcanos and the item is returned by that block's filter."
+    }
+  ],
+  "tds": {
+    "intro": "<data built in Orcanos before the run; logical names mapped to real keys in config.json>",
+    "tables": [
+      {
+        "title": "Saved Orcanos filters",
+        "columns": [
+          "Filter",
+          "Returns"
+        ],
+        "rows": [
+          [
+            "F1",
+            "Requirements REQ-01 … REQ-30 (excludes REQ-31, status Obsolete). Must include the Name and Traced Items Info columns."
+          ],
+          [
+            "F2",
+            "All test cases TC-01 … TC-06"
+          ],
+          [
+            "F3",
+            "All risks RSK-01, RSK-02"
+          ],
+          [
+            "F4",
+            "All test runs of TC-01 … TC-06"
+          ]
+        ]
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "VT-006",
+      "title": "Matrix content matches Orcanos",
+      "srs": [
+        "SRS-020.1",
+        "SRS-020.2"
+      ],
+      "automation": {
+        "file": "automation/test_traceability.py",
+        "function": "test_vt_006_matches_orcanos"
+      },
+      "pre": "VT-005 passed. Rows per page set to 25.",
+      "evidence": "Screenshots of both matrix pages; the Orcanos data compared, kept as JSON.",
+      "steps": [
+        [
+          "Open P-VAL-01 and click ⟳ refresh.",
+          "The matrix loads; the footer shows “Page 1 of 2”."
+        ],
+        [
+          "List the L1 rows on both pages and compare with what filter F1 returns in Orcanos.",
+          "Exactly REQ-01 … REQ-30, the same set as F1 returns. REQ-31 does not appear."
+        ],
+        [
+          "For REQ-01 to REQ-06, list the items shown under each one and compare with that requirement's traces in Orcanos.",
+          "REQ-01: TC-01, TC-02 · REQ-02: TC-03 · REQ-03: none · REQ-04: TC-04 · REQ-05: TC-05 and RSK-01 · REQ-06: RSK-02. Nothing else."
+        ],
+        [
+          "Compare the names shown for REQ-01 … REQ-06 with the same items in Orcanos.",
+          "Identical."
+        ],
+        [
+          "Read the Test Runs cells for TC-01 and TC-02.",
+          "TC-01 shows a passed run, TC-02 a failed run — as in Orcanos."
+        ],
+        [
+          "Check REQ-07 … REQ-30.",
+          "Each shows TC-06."
+        ]
+      ]
+    }
+  ]
+}

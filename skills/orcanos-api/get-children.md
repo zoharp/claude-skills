@@ -37,15 +37,25 @@ Auth: same options as every endpoint — see [SKILL.md](SKILL.md).
 | `ID` | **path segment** | **Yes** | The item whose children you want — its **display id** (e.g. `19830`), the number *before* the parenthesis in `"PAR-19830 (8500)"`. |
 | version id | query | **Yes** | The version to read the hierarchy in. Same `Ver_id` you get from `QW_Login` → `Projects.Project[].Version[].Ver_id`, or an item's `Ver_Id`. |
 
-> ⚠️ **The version query-param spelling is not confirmed.** The call takes a version id, but the
-> exact key wasn't captured from a live request. Try in order: `?VerId=` → `?Ver_Id=` →
-> `?VersionId=`. **A wrong key does not necessarily error** — if a version is defaulted you get a
-> plausible-but-wrong child set, so verify against a known item before trusting the result, and
-> record the winning spelling here.
+> ✅ **Confirmed live (orca60, 2026-10-27): `?Ver_Id=<version>` — REQUIRED.**
+> - No version, `?VerId=`, `?VersionId=`, POST, or `/<id>/<ver>` → **HTTP 404** `"No HTTP resource was found that matches the request URI"`.
+> - A version the item does not exist in → **200** with `IsSuccess:false`, `"Item not found."`; `Ver_Id=0` → 400.
+> - Any version the item IS in works (an item inherited into a later version answers in both).
+> - `Get_Object` does not return the item's version — take it from the filter level / project version that found the item.
 
-> ⚠️ **Which id?** Pass the **display id** (`ID` in the response / `extract_item_id`), not the
-> internal link id (the parenthesised number). Same rule as
-> [QW_Get_Object](qw-get-object.md).
+> ⚠️ **Not on every Orcanos server (2026-10-29).** `us.orcanos.com` (tenant ipgmedical) answers
+> **HTTP 404 "No HTTP resource was found"** even with `?Ver_Id=` — the route is missing from that
+> server's build. Probe without login: `GET <base>/api/v2/Json/Get_Children/1?Ver_Id=1` → **401** =
+> route exists (app.orcanos.com), **404** = not deployed there. Same for `GetSystemTable` /
+> `GetSystemTableValues`. Report it as "not available on this server", never as a bad id.
+
+> ⚠️ **Which id?** Pass the item's **`ID` in that version** (`ID` in the response / `extract_item_id`),
+> not the internal link id (the parenthesised number), and **not its `Original_id`**. A branched
+> item has a different `ID` per version; `Root_Document` (and `Parent_original_id`) hold the
+> ORIGINAL id. Resolve it first from a filter of that type read in the version — every row has the
+> system fields `ID` + `Original_id` (`QW_Get_Object_View` with the original id does NOT work for a
+> branched item). The original id of a branched item answers 200 `"Item not found."`. Live orca60
+> 2026-10-27: DOC original 8467 = ID 16278 in version 434. See `Orcanos-infra/orcanos-documents.md` §3.
 
 ---
 
@@ -143,7 +153,7 @@ same cycle discipline as [QW_Get_Object_Relations](qw-get-object-relations.md).
 function ensureArray(v) { return Array.isArray(v) ? v : v == null ? [] : [v]; }
 
 async function getChildren(base, auth, itemId, verId) {
-  const res = await fetch(`${base}/api/v2/Json/Get_Children/${itemId}?VerId=${verId}`, {
+  const res = await fetch(`${base}/api/v2/Json/Get_Children/${itemId}?Ver_Id=${verId}`, {
     headers: { Authorization: auth, 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error(`Get_Children ${itemId}: HTTP ${res.status}`);
@@ -171,6 +181,7 @@ once (its second appearance renders as a leaf) instead of looping forever.
 ---
 
 ## See also
+- `Orcanos-infra/orcanos-documents.md` — what the tree means: DOC → paragraphs → items, `Root_Document`, the pool
 - [SKILL.md](SKILL.md) — base URL, auth, XML→JSON quirks
 - [qw-get-object.md](qw-get-object.md) — one item's **full field set** (`Field[]`); this endpoint returns a fixed, pre-resolved subset instead
 - [qw-get-object-relations.md](qw-get-object-relations.md) — **trace** links (a different graph from this parent/child tree), plus the cycle-safe expansion pattern

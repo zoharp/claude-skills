@@ -60,7 +60,7 @@ See [Pagination & Return Types](#pagination--return-types) section below for ful
 | `Item_Type` | string | No | REQ, TC, DEF, etc. See Item Types table below |
 | `Version_id` | string | No | Project version ID from `QW_Login` |
 | `Filter_By` | string | No | SQL WHERE fragment (appended to filter's WHERE) |
-| `Order_By` | string | No | SQL ORDER BY clause |
+| `Order_By` | string | No | Bare `ColumnName ASC\|DESC` — **no brackets, no "ORDER BY" keyword**, commas for multiple columns (`"Priority DESC, Created_date ASC"`), ASC is the default (per Orcanos KB: qw_get_filter_results-rest-api). ⚠️ `[Updated_date] DESC` (bracketed) returned **HTTP 400 `"The requested sort order is invalid."`** (2026-09-16) — that's invalid syntax, not proof the field doesn't work. The correct bare form is untested live; verify before relying on it. |
 | `IsNewPaging` | string | No | **MUST be `"0"`** (string) for correct pagination with Total_records |
 | `IsReturnPageCount` | string | No | **MUST be `"yes"`** (string) to get both rows AND accurate total count. NOT "0" or "1" |
 | `DashboardItemId` | string | No | Dashboard context (optional) |

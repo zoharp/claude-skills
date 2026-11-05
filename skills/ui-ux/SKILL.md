@@ -31,8 +31,15 @@ Define these CSS variables in your root stylesheet:
   --orc-text:          #1A1631;
   --orc-text-mid:      #6B6580;
   --orc-text-light:    #A8A1BE;
+
+  /* light-outline nav/tab variant (§9, §10) */
+  --orc-purple-border:      rgba(92,53,168,0.28);
+  --orc-purple-border-soft: rgba(92,53,168,0.14);
+  --orc-purple-tint:        #F4F1FB;
 }
 ```
+
+`--orc-orange` in the light-outline nav/tab pattern (§9, §10) has exactly two jobs: the accent bar on the **active** row/pill, and the **hover** icon color on any row/pill (including inactive ones). It is never a background/fill color for rows or panels, and never the border color.
 
 **Semantic color palette:**
 | Purpose | Value |
@@ -252,31 +259,69 @@ Same as input + `resize: vertical; min-height: 52px;`
 }
 ```
 
-### SearchableSelect (dropdown inside modal)
-Dropdowns inside modals with `overflow: auto` **must use `position: fixed`** to avoid clipping.
+### Combo / searchable picker — the ONE rule set (we keep getting this wrong)
 
-```jsx
-function SearchableSelect({ options, value, onChange, placeholder }) {
-  const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
-  const [dropPos, setDropPos] = React.useState({ top: 0, left: 0, width: 0 });
-  const inputRef = React.useRef(null);
+**Every** choice list that can hold more than ~6 entries (projects, versions, work item types,
+filters, fields, users, Jira projects / issue types / fields, picklist values, conditions) is a
+**searchable combo**. Never a plain `<select>`, never an `<input list>` + `<datalist>`.
+A fixed 2–6 choice set (direction, yes/no, poll interval) is a segmented control instead.
 
-  const openDropdown = () => {
-    const r = inputRef.current.getBoundingClientRect();
-    setDropPos({ top: r.bottom + 2, left: r.left, width: r.width });
-    setQuery(''); setOpen(true);
-  };
+Must-haves — a combo that misses any of these is a bug:
 
-  // Dropdown: position: 'fixed', top/left/width from dropPos, zIndex: 9999
-  // Option: onMouseDown={e => { e.preventDefault(); onChange(opt.value); setOpen(false); }}
-  // Outside click: document mousedown listener → setOpen(false)
-}
-```
-Rules:
-- `onMouseDown` (not `onClick`) on options — prevents blur before selection
-- `e.preventDefault()` on option mousedown keeps focus in input
-- Filter: `options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))`
+1. **Fully visible — the list is PORTALLED.** Render the open list with
+   `createPortal(list, document.body)` and `position: fixed` coordinates from the field's
+   `getBoundingClientRect()`. An `absolute` list inside a table, a card with `overflow`, a
+   modal body or a horizontally scrolling wrapper is CLIPPED (it happened in the Jira field map:
+   the list opened upward and was cut to two rows). `z-index` above modals (4000).
+2. **Fits the window.** Measure room below vs above; open upward only when below is short
+   AND above is bigger; cap `max-height` to the room it has (min 120px, preferred 320px).
+   Width = field width, at least 220px, never past the window's right edge. Re-place on
+   `resize` and on `scroll` (capture phase), so it follows the field.
+3. **Outside click checks BOTH the field and the portalled list** — the list is no longer a DOM
+   child of the field, so `box.contains(e.target)` alone closes it before the click lands.
+4. **Searchable.** Typing filters; every word must match (`words.every(w => label.includes(w))`),
+   case-insensitive. Cap rendered rows (~200). Show "No matches" when empty.
+5. **Keyboard.** ↓/↑ move the active row (scrolled into view), Enter picks, Esc closes.
+   `role="combobox"` + `aria-expanded` + `aria-controls`; the list `role="listbox"`, rows
+   `role="option"` with `aria-selected`.
+6. **Options:** `onMouseDown={e => e.preventDefault()}` so the input keeps focus; pick on click.
+7. **Designed, same as a text box:** same height, border, radius, padding and font as the inputs
+   beside it; a ▾ caret on the right (`pointer-events: none`) with `padding-right: 28px`; the
+   chosen label shown when closed, the placeholder in muted grey; the chosen row bold/purple,
+   the active row lavender (`#F0EBFA`); long labels WRAP inside the list (never cut).
+   **The input itself must be `width: 100%`** of its picker, and the picker `width: 100%; min-width: 0`
+   of its column — unset, the input keeps its intrinsic ~280px while the absolutely placed ▾ sits at
+   the column's far edge, floating outside the box (Doc Import "Set a field", 2026-10-27).
+   **Page standard (traceability-matrix Doc Import, 2026-10-27 — copy it for any page):** one block,
+   last in the page's stylesheet and scoped to the page root so it beats per-section rules, styling
+   BOTH `select` and `.drv-combo-input` the same:
+   ```css
+   .X-page select, .X-page .drv-combo-input {
+     font: inherit; font-size: 13px; height: 34px; box-sizing: border-box;
+     border: 1px solid var(--orc-border); border-radius: 8px; background-color: #fff;
+     padding: 0 30px 0 10px; text-overflow: ellipsis; cursor: pointer; min-width: 0; max-width: 100%;
+   }
+   .X-page select { appearance: none; /* + an SVG chevron background at right 11px center, #6B6580 */ }
+   .X-page .drv-combo-input { width: 100%; }
+   /* hover/focus border var(--orc-purple), focus ring rgba(92,53,168,.12); disabled #F3F2F6 + #8A8698 */
+   .X-page .drv-combo-arrow { right: 11px; font-size: 11px; }
+   ```
+   Then size per place: **fill the column in forms** (`width: 100%`), a **fixed width** (220–320px)
+   where the combo sits in a row of other controls or a table cell, and `height: 30px` inside dense
+   tables. The native-select arrow and the combo's ▾ must sit at the same spot so the two look alike.
+   Reference: the last block of `src/frontend/src/styles/DocImport.css`.
+8. **Sorted A→Z** by the visible label (`localeCompare(..., {sensitivity:'base', numeric:true})`).
+   Solution projects labelled "(Solution)" and **bold** (`strong: true`).
+9. **A saved value missing from the list still shows** — add it as an extra option so the field
+   never looks empty after a reload.
+10. **Disabled state says why** ("Choose a project first") in the placeholder.
+
+Reference implementation (traceability-matrix): `SearchSelect` in
+`src/frontend/src/pages/review/reviewUi.jsx` + `utils/useDropdownFit.js` with `{ fixed: true }`
+(options `{value, label, strong}`, CSS in `styles/DocReview.css`). Reuse it; don't write another.
+
+Before calling a screen done, open every combo on it — including ones inside tables, value-map
+rows and modals — near the bottom of the window, and confirm the whole list is readable.
 
 ---
 
@@ -339,6 +384,7 @@ No card borders, no shadow on rows — only hairline separators.
 
 ## 9. Tabs
 
+### Underline tabs (in-page section switcher, e.g. inside a table or panel)
 ```css
 .tab-bar { display: flex; gap: 4px; padding: 12px 24px 0; border-bottom: 1px solid #e8e8e8; }
 
@@ -352,8 +398,44 @@ No card borders, no shadow on rows — only hairline separators.
 .tab-btn:hover { color: #333; background: #f5f5f5; }
 .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
 ```
-
 Active tab: 2px bottom border flush with container border via `margin-bottom: -1px`.
+
+### Light-outline pill tabs (preferred for admin/config tab bars — revised 2026-09-23)
+Outlined pills instead of an underline row. **No border color change on the active pill** — the
+active pill is marked by its purple fill/text plus a **purple** accent bar (not orange; orange is
+reserved for the sidebar's active accent, §10, so the two active-state cues read as distinct
+surfaces). Orange still marks hover only.
+```css
+.tab-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.tab-pill {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 16px; border-radius: 10px;
+  border: 1px solid var(--orc-border); background: #fff;
+  font-size: 13.5px; font-weight: 500; color: var(--orc-text-mid);
+  cursor: pointer; transition: all 0.15s;
+}
+.tab-pill:hover { border-color: var(--orc-purple-border-soft); background: rgba(92,53,168,0.03); }
+.tab-pill:hover .tab-pill-icon { stroke: var(--orc-orange); }
+.tab-pill.active {
+  border-color: var(--orc-border); background: var(--orc-purple-tint);
+  color: var(--orc-purple); font-weight: 600;
+}
+.tab-pill.active .tab-pill-icon { stroke: var(--orc-purple); }
+/* purple accent bar, active only — bottom edge, inside the pill */
+.tab-pill.active::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2.5px; background: var(--orc-purple);
+}
+```
+Icon default: `stroke: var(--orc-purple)` at `opacity: 0.7` (app-wide icons are purple by default,
+not neutral gray — keeps every nav/tab surface reading as one system). **Hover turns the icon
+orange** (`.tab-pill:hover .tab-pill-icon`, `opacity: 1`) — this is the hover feedback, not a
+border/background change on the icon itself. Active overrides hover and keeps/returns the icon to
+purple at full opacity. `background: #fff` on the pill is correct here because tabs sit on the
+admin-content panel, which really is white — don't copy that value onto a sidebar or any surface
+that sits on the lavender wash (§10).
 
 ---
 
@@ -365,24 +447,53 @@ Active tab: 2px bottom border flush with container border via `margin-bottom: -1
   background: #EAE5F5; border-right: 1px solid #D4D0E0;
   display: flex; flex-direction: column; z-index: 90;
 }
+```
+
+### Light-outline nav item (preferred — revised 2026-09-23)
+Rows sit directly on the sidebar's real ground — **`var(--orc-purple-wash)` (`#F0EBFA`), never white** (`.admin-nav` in `AdminScreen.css` confirms this; do not put a white card behind the rows). Rows are transparent at rest, so the wash shows through. Hover doesn't change the border color — **it turns the icon orange**, which is the hover feedback. **Active does not get a purple border** — it gets a soft purple fill plus a thin **orange** accent bar on the left edge; the sidebar is the one surface in the system where orange marks the active state itself (everywhere else — tabs, §9 — the active accent is purple, so orange stays a hover-only or sidebar-only signal and never means "active" in two different colors on the same screen).
+```css
+.sidebar { background: var(--orc-purple-wash); } /* ground — not white */
 
 .sidebar-item {
-  padding: 9px 12px; margin: 1px 8px;
+  position: relative;
+  padding: 10px 12px; margin: 1px 8px;
   background: transparent; border: 1px solid transparent;
-  border-radius: 8px; cursor: pointer; transition: all 0.15s;
-  display: flex; align-items: center; gap: 4px;
+  border-radius: 10px; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: flex-start; gap: 10px;
 }
-.sidebar-item:hover { background: rgba(92,53,168,0.08); }
+.sidebar-item:hover { border-color: var(--orc-purple-border-soft); background: rgba(92,53,168,0.03); }
+.sidebar-item:hover .sidebar-item-icon { stroke: var(--orc-orange); opacity: 1; }
 .sidebar-item.active {
-  background: linear-gradient(135deg, rgba(92,53,168,0.12), rgba(245,166,35,0.06));
-  border: 1px solid rgba(92,53,168,0.15);
+  border-color: transparent; background: var(--orc-purple-bg);
+  padding-left: 15px; /* room for the accent bar */
 }
+/* orange accent bar, active only — left edge */
+.sidebar-item.active::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 2px; background: var(--orc-orange);
+}
+.sidebar-item-icon { stroke: var(--orc-purple); opacity: 0.7; transition: stroke 0.15s, opacity 0.15s; }
+.sidebar-item.active .sidebar-item-icon { opacity: 1; }
+```
+Icon default is purple (not neutral gray) at reduced opacity, going full-opacity on hover/active —
+app-wide icon color is purple, per §1's admin/advanced semantic entry; orange is reserved for
+hover feedback and the sidebar's own active bar. `.sidebar-item.active:hover` keeps the purple
+icon (active state wins over hover) — don't let the hover rule turn an already-active icon orange.
 
 .sidebar-item-title {
   font-size: 13px; font-weight: 500; color: #3D3858;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .sidebar-item.active .sidebar-item-title { color: #5C35A8; font-weight: 600; }
+```
+
+### Legacy gradient variant (existing screens not yet migrated)
+```css
+.sidebar-item.active--legacy {
+  background: linear-gradient(135deg, rgba(92,53,168,0.12), rgba(245,166,35,0.06));
+  border: 1px solid rgba(92,53,168,0.15);
+}
+```
 
 .sidebar-section-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -653,8 +764,9 @@ When implementing a new UI component:
 - [ ] Destructive actions: confirmation required, red `#d93025`
 - [ ] Transitions: `0.15s` on hover
 - [ ] Hover-reveal: list action buttons start opacity 0
-- [ ] Dropdowns inside scrolling modals: `position: fixed` + `getBoundingClientRect()`
-- [ ] Tab active state: 2px bottom border, `margin-bottom: -1px`
+- [ ] Every combo: portalled + `position: fixed`, fits the window, searchable, keyboard, A→Z, styled like the inputs (see *Combo / searchable picker*); no plain `<select>` / `<datalist>`
+- [ ] Tab active state: underline row uses 2px bottom border (`margin-bottom: -1px`); admin/config tab bars use light-outline pills (§9) with the orange accent on the active pill only
+- [ ] Sidebar nav: ground is `var(--orc-purple-wash)`, never white; light-outline active state (§10) — purple border + tint + orange left accent bar; hover turns the icon orange (not the border/background)
 - [ ] Pills: `border-radius: 20px`, semantic color by content type
 - [ ] Mobile: test at 768px, stack field rows
 - [ ] User menu: avatar 36px circle, dropdown 220px with 12px radius, icon+label items, highlighted item in lavender, sign-out neutral→red on hover, outside-click closes

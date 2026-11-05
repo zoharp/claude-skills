@@ -113,9 +113,19 @@ async function addTestCaseWithSteps({ baseUrl, authHeader, projectId, major, min
 - `POST /api/v2/Json/UpdateStep` — body `UpdateStepNew` (`CurrentStepNumber` → `NewStepNumber`)
 - `POST /api/v2/Json/DeleteStep` — body `DeleteStep` (`ItemId`, `ObjectType`, `StepNumber`)
 
+✅ **Verified live (account `orcanos`, 2026-11-04, API key):**
+- `UpdateStep` / `DeleteStep` take **`ObjectType: "OBJECT"`** for every type except defects (`"DEFECT"`).
+  The type code (`T_CASE`) answers *ObjectType not found. Please use DEFECT for defects and OBJECT for any other item type.*
+- `UpdateStep {ItemId: 109235, ObjectType: "OBJECT", CurrentStepNumber: "1", NewStepNumber: "1", Description, ExpectedValue}` → *Step updated successfully.*
+- `DeleteStep {ItemId, ObjectType: "OBJECT", StepNumber: "2"}` → *Step deleted successfully.*; a step that does not
+  exist → `IsSuccess: false`, *Step was not found.* — so "delete step 1 until not found" clears an item's steps
+  (steps renumber after a delete), which is how `validation/scripts/sync_orcanos.py` rewrites them.
+- Steps cannot be read back: `QW_Get_Section_Data` answers *Section not supported.* for `Steps`.
+
 ---
 
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth
 - [QW_Add_Object](qw-add-item.md) — Create the test case first
+- [Test execution](test-execution.md) — Record a run's per-step results in an Execution Set
 - [Get_AI_Response](ai-get-response.md) — Ask Paul generates the steps this endpoint materialises

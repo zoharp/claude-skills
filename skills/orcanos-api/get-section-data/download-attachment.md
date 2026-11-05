@@ -113,7 +113,16 @@ open(name, "wb").write(pdf)
   | **Draft** | **the original Office file** (`PK\x03\x04`) | `…_D1_DRAFT.docx` |
 
   A draft has no controlled rendition yet, so Orcanos hands back the uploaded source — **mislabelled
-  `application/pdf`**. Never trust the Content-Type; **read the extension off
+  `application/pdf`**.
+
+  ✅ **A draft's PDF IS available — add `&PreviewPDF=1`.** That is the flag the Orcanos item page's
+  own *PDF preview* button sends (`PDFPreviewWithExistingFile(ItemId, ItemType, Version, AttachmentId)`
+  in `/web/{ver}/items/view`). **Verified 2026-10-07** on orca60: DMS 18070 / ver 363 / attachment
+  3355 (D.1 **Draft**, `PDFPreviewFileExist: "Y"`, `pdf_path` **empty**) → `200`, `%PDF-1.4`,
+  454,307 bytes, `inline; filename="…_D_1.pdf"`. Orcanos builds the rendition asynchronously after an
+  upload ("Generating PDF" on the item page), so a just-uploaded draft may still answer with its
+  `PK` source — with the flag set, treat anything but `%PDF` as "not ready yet". Used by the
+  traceability-matrix Doc Review compare (`orcanos_files.download_attachment(preview_pdf=True)`). Never trust the Content-Type; **read the extension off
   `Content-Disposition`** and confirm with the magic bytes.
 - **The server names the file**, in `Content-Disposition`, and the suffix encodes the revision's
   standing:

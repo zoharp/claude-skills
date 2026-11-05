@@ -26,6 +26,9 @@ Rows arrive under `Data.section.revision[]`, each as a `field[]` array — flatt
 
 ---
 
+> **Writing** a revision (a new file on a DMS item): [Add_Attachment](../add-attachment.md) with
+> `Object_Type=DMS`, `Attachment_Type=FILE` (help page 2026-11-04, unverified live).
+
 ## Fields
 
 Keyed on `column` (the stable key — `title` is **not** unique here: two fields are titled `ID`).

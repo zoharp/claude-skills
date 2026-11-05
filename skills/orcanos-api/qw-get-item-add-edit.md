@@ -91,7 +91,11 @@ Auth: same options as every endpoint — see [SKILL.md](SKILL.md).
         "web_order": 2,
         "section": ""
       }
-    ]
+    ],
+    "work_item_section": { "item": [
+      { "ID": "156", "section_name": "Training",        "section_order": "1" },
+      { "ID": "18",  "section_name": "Signers Details", "section_order": "3" }
+    ] }
   },
   "Message": "",
   "HttpCode": 200
@@ -107,13 +111,13 @@ field returns a single object, not a 1-element array — wrap with `ensureArray(
 | Property | Notes |
 |---|---|
 | `name` | Internal field name to submit — usually maps to `QW_Add_Object`'s `ws_add_col_name` (see below), **not** always `name` itself. |
-| `default_title` / `title` | `default_title` is the system label (e.g. `"Name"`); `title` is the **tenant-customized** label shown on screen (e.g. `"Synopsis"`). Render `title`, submit by `name`/`ws_*_col_name`. |
+| `default_title` / `title` | `default_title` is the system label (e.g. `"Name"`); `title` is the **tenant-customized** label shown on screen (e.g. `"Synopsis"`). Render `title`, submit by `name`/`ws_*_col_name`. ⚠️ On QMS item types (CAPA, NCR, Complaint, …) the field whose `ws_add_col_name` is the literal `Description` is usually the item's **print-layout template** (HTML + embedded Orcanos merge-fields), not a free-text box — see the warning in [qw-add-item.md](qw-add-item.md). If you need to show/submit a human description for one of these types, look here for a *different* field whose `title` reads like "Description" (a `CS*` custom field), or fall back to one titled "Root Cause". |
 | `type` | Field widget: `text`, `combobox`, `date`, `html` (rich text), and others (`number`, `checkbox`, `multiselect` on other item types — not confirmed on this instance, verify per field). |
 | `max_length` | Max chars for `text` fields; `0` = not applicable/unbounded. |
 | `ws_add_col_name` / `ws_edit_col_name` | The **payload key** to use when calling `QW_Add_Object` (add) or the corresponding update endpoint (edit) for this field — usually the same value, occasionally differs. |
-| `section` | Groups fields into form sections/tabs for rendering. Empty string = default/ungrouped section. Group fields by this value, then sort each group by `web_order`. |
+| `section` | Groups fields into form sections/tabs. ⚠️ It is a **section ID** (e.g. `"156"`), **not a name**. Look the name and order up in `Data.work_item_section.item` = `[{ID, section_name, section_order}]` (verified live, orca60 DMS, 2026-10-07; `item` is a single object when there is only one section). Empty string = no section → show it as "General", first. Never show the ID to a user. |
 | `web_order` | Integer sort key for field display order **within its section**. |
-| `val` | For `combobox`/picklist types: array of `{code, label, auto_assign, auto_assign_id}` — the selectable options. `code` is the value to submit, `label` is the display text. `auto_assign`/`auto_assign_id` (seen on Status/Assigned_to) indicate the option auto-fills another field (e.g. selecting status `"New"` auto-assigns `Assigned_to` to `Creator`, id `5`). Empty `[]` for non-picklist types. |
+| `val` | For `combobox`/picklist types: array of `{code, label, auto_assign, auto_assign_id}` — the selectable options. `code` is the value to submit, `label` is the display text. **Score lists (Risk P / S / D / P Hazard / P Harm) carry the score as a numeric `code`** (`"3"` → `"3-Occasional"`, or just `"Occasional"` when the project shows descriptions only) — match a number to the `code`, never to digits in the label; risk levels are `LEVEL_0…LEVEL_n`. Note: `QW_Add_Object` custom fields (`CS<n>_value`) are sent as the **label** in the traceability-matrix import (Critical Notes #90, #95); see `orcanos-processes/orcanos-risk-process.md`. `auto_assign`/`auto_assign_id` (seen on Status/Assigned_to) indicate the option auto-fills another field (e.g. selecting status `"New"` auto-assigns `Assigned_to` to `Creator`, id `5`). Empty `[]` for non-picklist types. |
 | `Text` / `OldValue` | Current display value (Edit mode) / prior value before a pending change. `null` on Add mode for empty fields. |
 | `SelectedText` / `MultiSelectText` | Populated for single/multi-select combobox current selections where applicable. |
 | `edit_ind` | Non-null (e.g. `"1"`) marks a field as editable in Edit mode; check per-instance — not all field types set this. |
@@ -139,9 +143,12 @@ function ensureArray(v) { return Array.isArray(v) ? v : v == null ? [] : [v]; }
 
 function buildFormLayout(getItemAddEditData) {
   const fields = ensureArray(getItemAddEditData?.Data?.field);
+  // f.section is an ID — resolve it to the section's name via work_item_section
+  const names = Object.fromEntries(
+    ensureArray(getItemAddEditData?.Data?.work_item_section?.item).map(s => [String(s.ID), s.section_name]));
   const bySection = {};
   for (const f of fields) {
-    const section = f.section || 'General';
+    const section = f.section ? (names[f.section] || 'Other details') : 'General';
     (bySection[section] ??= []).push(f);
   }
   for (const section in bySection) {

@@ -20,6 +20,7 @@ This skill family describes **what Orcanos is made of**. It is the conceptual la
 | File | Covers |
 |---|---|
 | `orcanos-work-items.md` | The work-item model, the anatomy of an item, the identifier traps, and the catalogue of item types with their codes |
+| `orcanos-documents.md` | Structured (DHF / ALM) documents: DOC → PAR/REQ_HD → traceable items, `Root_Document`, the pool, walking with `Get_Children`, done = IsActive ∧ IsComplete |
 
 ## Planned — one file per module / process
 

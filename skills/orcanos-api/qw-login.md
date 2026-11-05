@@ -71,6 +71,7 @@ POST https://app.orcanos.com/orca60/api/v2/Json/QW_Login
 | `User_details.Virtual_dir` | Build tenant path for all future calls | e.g. `orca60` |
 | `User_details.Display_name` | Display to user | |
 | `User_details.Is_admin` | ⭐ Orcanos administrator flag (`0`/`1`) | **Present even when `User_details.Permission` is absent.** Distinct from the per-type `Permission` letters — gate *admin-only module writes* on this, not on `A`/`O`. See **Admin flag** below |
+| `User_details.User_pwd` | ⚠️ **The user's password, in plain text** (verified orca60, 2026-10-18) | **Never log, store, cache or send the login response to a browser as-is.** Drop this key first |
 | `Projects.Project[]` | Populate project selector | See extraction pattern below |
 | `Project.Item_type[].Code` | **Original work-item code** | ⭐ This is the ORIGINAL code — use it for `QW_AddRelation` (see below) |
 | `Project.Item_type[].Label` | Human label for the type | e.g. `Product Requirement` |
@@ -141,6 +142,14 @@ const key = `${itemTypeCode}-${numericId}`;   // use as Source/TargetIdKeys with
 Because each configured level already stores its `Item_type.Code`, the code for any item in that
 level is known without an extra lookup. See [qw-add-trace.md](qw-add-trace.md).
 
+> 🛑 **`Item_type[]` is also the only source of truth for which types exist on a project** —
+> they are configured per *project*, not merely per tenant, so two projects on one tenant differ.
+> It is where you get the **`Label`** that `QW_Add_Object`'s `Object_Type` requires: passing the
+> `Code` there returns `IsSuccess: false` with `"Object type could not be found: 'COMP'"` even
+> when that code is present. Reads (`QW_Get_Item_Add_Edit`, `QW_Get_Object`) want the `Code`;
+> only creation wants the `Label`. Full rule in
+> [qw-add-item.md](qw-add-item.md#-object_type-takes-the-label-not-the-code).
+
 ---
 
 ## Permissions
@@ -207,6 +216,10 @@ function canAddType(typePerms, projectId, typeCode) {
 | `O` | Enable Ask Paul |
 | `L` | Allow to Launch Training |
 | `V` | **View only — a READ-ONLY (viewer) licence.** Grants nothing; its presence *is* the denial |
+
+> ⚠️ **Edit is `U`, never `E`.** `E` is *Execute Test Case* and is absent on most non-test types — gating Edit on `E`
+> hides every write from a user who has *Edit* ticked in Orcanos, with no error (traceability-matrix Product structures,
+> 2026-10-28, live on orca60 PRT).
 
 ### ⭐ `V` — the viewer licence (verified orca60, 2026-08-22)
 

@@ -1,6 +1,6 @@
 ---
 name: orcanos-processes
-description: How Orcanos QMS processes actually run end to end — training, document control, CAPA and the rest. The workflow layer: triggers, states, roles, who signs what. Use with Orcanos-infra (what the objects are) and orcanos-api (how to call them).
+description: How Orcanos QMS processes actually run end to end — training, risk management (FMEA / ISO 14971 scoring), document control, CAPA and the rest. The workflow layer: triggers, states, roles, who signs what. Use with Orcanos-infra (what the objects are) and orcanos-api (how to call them).
 revision: 1.0.0
 ---
 
@@ -20,11 +20,12 @@ created, who signs, and where the records land.
 | File | Process | Status |
 |---|---|---|
 | `orcanos-training-process.md` | **Training Management** — Read & Understand automation, formal/manual training, launch paths, evidence | Written from customer-facing decks |
+| `orcanos-risk-process.md` | **Risk Management** — ISO 14971 / FMEA as Orcanos runs it: the Risk item's fields and codes, FMEA settings and the four calculation shapes (P×S table, P hazard × P harm = P total, S×P×D, same severity), mitigation → test → run, Excel import rules | KB *FMEA Settings* + live orca60 + product owner |
 
 ## Planned
 
 `document-control-process.md` · `capa-process.md` · `complaint-process.md` ·
-`change-control-process.md` · `risk-process.md` · `audit-process.md` · `supplier-process.md`
+`change-control-process.md` · `audit-process.md` · `supplier-process.md`
 
 ---
 

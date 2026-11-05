@@ -63,6 +63,20 @@ Auth: same options as every endpoint — see [SKILL.md](SKILL.md).
 }
 ```
 
+> **Verified live (orca60, 2026-10-08): the response is richer than the docs.** `GET ?Id=<display id>`
+> works, and each relation also carries the **link type** and both sides' **code and name**:
+>
+> ```json
+> { "Source": "12851", "Source_ItemName": "Add function to calculate the blood pressure",
+>   "Source_WorkItemCode": "SR", "Target": "21937", "Target_ItemName": "electric shock due to …",
+>   "Target_WorkItemCode": "RISK", "LinkType": "Risk Mitigation" }
+> ```
+>
+> Link types seen: `Risk Mitigation`, `Test Verification`, `Dependent On` (the default), `Relates To`,
+> `Design Input`, `Design Output`, `Complaint`, `Risk`, `Copy As Link`. `*_WorkItemCode` is the **custom**
+> code (`TC`, not `T_CASE`). No run result / status is included — the Risk module's relation walk
+> (`risk_relations.py`, traceability-matrix) relies on this.
+
 | Field | Notes |
 |---|---|
 | `Data.Id` | The queried item id, echoed back. |

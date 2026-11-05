@@ -33,6 +33,15 @@ same `Item_ID` returns byte-identical rows for `Item_Type=DHF`, `T_CASE` and eve
 **`RecordCount` omitted returns everything** (all 36 rows here); a value caps the list from the
 newest end (`5` → the 5 most recent). A value larger than the log is harmless.
 
+⚠️ **Build the Basic header on the canonical `User_name`, not what the user typed** *(observed on
+the Covaris tenant, 2026-09 — inferred, not yet confirmed against that account's login response)*.
+A user signed in with an **e-mail address** passed `QW_Login` and `QW_Get_Filter_Results` with that
+header, yet this endpoint answered in a 200 envelope:
+`IsSuccess: false, "Orcanos User Authentication issue : User or password is not valid."`
+Take `Data.User_details.User_name` from the `QW_Login` response and rebuild the header on it. Don't
+treat that message as a 401 / sign-out — the same credential still works on other endpoints.
+Reference implementation: `login()` and `_getJson()` in covaris-bom's `src/api/orcanosClient.js`.
+
 ---
 
 ## Row shape — two levels

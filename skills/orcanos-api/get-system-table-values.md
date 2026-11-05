@@ -105,7 +105,11 @@ expect the standard wrapper:
 }
 ```
 
-> ⚠️ **The sample rows above are illustrative, not captured from a live call.** The envelope
+> ⚠️ **CORRECTION — verified live on orca60, 2026-10-15: the envelope below is WRONG.** The real response is
+> `{ "TotalRecords", "CurrentPage", "PageSize", "IsObjStatus", "IsEdit", "IsTableEdit", "SystemValues": [ { "Code", "Description", "IsDefault", "IsActive", "IsComplete", "IsFreeze", "ItemOrder", "UserDefinitionCode", "ShowInGrid", "EarnedValue", "Color" (integer), "IsEdit", "IsDelete" } ] }` — flat objects, no `IsSuccess`/`Data.Object`/`Field[]`,
+> no `Display_text`. `GetSystemTable` likewise returns `{ "TotalRecords", ..., "SystemTables": [ { "TableName", "Description", "IsCustom", ... } ] }`.
+> `TableName` must be the table **code**; the description gives HTTP 400 `Enter a valid TableName.` (An unknown code is also a 400, not an empty list.)
+> For a work item's status list see [get-item-statuses.md](get-item-statuses.md). The envelope
 > (`IsSuccess` / `Data.Object[]` / `Total_records` / `Current_page` / `Page_size`) is inferred from
 > the declared sibling schema; the per-value field names come from the
 > `SystemTableValue_Save_Parameter` definition (below), which is the same data going the other way.
@@ -265,3 +269,7 @@ This file's parameter table was extracted from exactly that.
 - [get-filter-list.md](get-filter-list.md) — the other no-`QW_`-prefix lookup endpoint, with the same
   "wrong identifier returns an empty list, not an error" trap
 - Orcanos help: [System Tables](https://help.orcanos.com/knowledgebase/system-tables-2/)
+
+## Not on every server (2026-10-29)
+
+`us.orcanos.com` answers `GetSystemTable` / `GetSystemTableValues` with **HTTP 404 "No HTTP resource was found"** (route missing from that build; app.orcanos.com answers 401 without login = exists). A 404 here means *cannot read*, not *no table* — the traceability DHF reports it as "could not be read" (`get_item_statuses_ex`).

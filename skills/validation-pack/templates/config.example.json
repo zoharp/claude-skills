@@ -1,0 +1,43 @@
+{
+  "_readme": "Copy to config.json (git-ignored) and fill in. Passwords are NEVER written here — only the name of the environment variable that holds each one.",
+
+  "app_url": "https://traceability-matrix.fly.dev",
+  "orcanos_url": "https://app.orcanos.com/<validation-account>",
+  "not_enabled_account_url": "https://app.orcanos.com/<an-account-not-set-up-for-the-add-on>",
+
+  "users": {
+    "A": { "username": "<user A>", "password_env": "VAL_USER_A_PASSWORD" },
+    "V": { "username": "<viewer user>", "password_env": "VAL_USER_V_PASSWORD" }
+  },
+
+  "project": {
+    "search": "VAL-TM",
+    "option": "VAL-TM (v1.0)",
+    "version_id": "<Ver_id of the VAL-TM version, from QW_Login or the Orcanos URL>"
+  },
+
+  "types": {
+    "requirement": "Requirement",
+    "test_case": "Test Case",
+    "risk": "Risk",
+    "test_run": "Test Run"
+  },
+
+  "filters": {
+    "F1": { "id": "<filter id>", "item_type": "REQ" },
+    "F2": { "id": "<filter id>", "item_type": "T_CASE" },
+    "F3": { "id": "<filter id>", "item_type": "RISK" },
+    "F4": { "id": "<filter id>", "item_type": "T_RUN" }
+  },
+
+  "items": {
+    "REQ-01": "<key>", "REQ-02": "<key>", "REQ-03": "<key>", "REQ-04": "<key>", "REQ-05": "<key>", "REQ-06": "<key>",
+    "REQ-31": "<key>",
+    "TC-01": "<key>", "TC-02": "<key>", "TC-03": "<key>", "TC-04": "<key>", "TC-05": "<key>", "TC-06": "<key>",
+    "RSK-01": "<key>", "RSK-02": "<key>"
+  },
+
+  "panel_name": "P-VAL-01",
+  "rows_per_page": 25,
+  "session_timeout_s": 2700
+}

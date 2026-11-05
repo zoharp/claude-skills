@@ -137,3 +137,4 @@ async function addRelation({
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - [QW_Login](qw-login.md) — Authenticate and get session/API key
+- [qw-delete-trace.md](qw-delete-trace.md) — delete a relation (the inverse operation)

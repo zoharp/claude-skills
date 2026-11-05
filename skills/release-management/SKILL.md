@@ -1,7 +1,7 @@
 ---
 name: release-management
 description: Use after every code change that requires version bumping or release notes. Handles versioning rules, release_notes.json updates, CLAUDE.md version tracking, and SCHEMA.md sync. Invoke when committing, releasing, or asked about versioning.
-revision: 1.0.0
+revision: 1.1.0
 ---
 
 # Release Management
@@ -46,6 +46,31 @@ Each change string must start with an icon + bold short label, then an em-dash, 
 
 Prepend — newest entry first. The bold label is the scannable headline; keep it 2–4 words. The detail after the em-dash is one sentence max.
 
+## Help links on every change (since 2026-10-15 — new entries only, never retro-fit old ones)
+
+When the project has a published user manual (GitBook or similar) and the change touches a
+documented screen, end the change string with a link to the **help page it affects**:
+
+```json
+"✨ **Risk baselines** — freeze a risk file and compare later edits against it. [Help: Risk Baselines](https://orcanos.gitbook.io/traceability-marix/risk-management/risk-baselines)"
+```
+
+- **Format:** `[Help: <Page Title>](<absolute https URL>)` as the **last** thing in the string, after the sentence. One link per change; if two pages are affected, link the main one.
+- **Absolute URLs only.** The same string is shown in the app's release-notes window, on the
+  published Release Notes page and anywhere else — a relative link or GitBook's `page:` form only
+  works in one of those places. (A GitBook import silently drops site-relative links.)
+- **Build the URL from the published site**, never guess it: `<publishedUrl>/<module-slug>/<page-slug>`
+  is the usual GitBook shape, but GitBook appends `-1` on clashes and renames slugs. After the
+  manual push, check each link returns 200 (`curl -sL -o /dev/null -w "%{http_code}" <url>`).
+  A page that is new in this release must be **published first**, then linked.
+- **Order when documenting:** edit the manual → push manual → verify the page URL → write the
+  release note with the link → push release notes.
+- No link when there is no user-facing page (internal fix, backend-only change). Never link to
+  a page that does not exist yet just to have a link.
+- The app's release-notes renderer must turn `[text](https://…)` into a link that opens in a new
+  tab (and render only `http(s)` URLs). If a project's renderer only handles `**bold**`, extend it
+  in the same change.
+
 ## CLAUDE.md — version tracking
 The `### Current versions` block in `CLAUDE.md` must be updated on every bump:
 ```markdown
@@ -85,6 +110,7 @@ If the change involved any of the following, update the corresponding section in
 - [ ] Version bumped in changed component(s)
 - [ ] `CLAUDE.md` → `### Current versions` updated
 - [ ] `release_notes.json` prepended with new entry (icon + **bold label** — detail)
+- [ ] Each user-facing change ends with a verified `[Help: Page](https://…)` link to the manual page it affects
 - [ ] Long-form entry prepended to the **changelog file** (`docs/changelog/CHANGELOG-vN.md`), **not** `CLAUDE.md`
 - [ ] Its one-line row added to `docs/changelog/README.md`
 - [ ] A new **Critical Note** in `CLAUDE.md` only if the release exposed a silent-failure trap
