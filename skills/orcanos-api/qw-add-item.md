@@ -165,7 +165,7 @@ Reference implementation: `_expand_custom_fields()` in `backend/api.py`.
 | Field | Type | Notes |
 |---|---|---|
 | `Insert_to_Pool` | string | `"Y"` = add to the pool (no parent); `"N"` = add into the product tree (CR/requirements only) |
-| `Parent_ID` | string | Parent item location; defaults to the project |
+| `Parent_ID` | string | Parent item location; defaults to the project. **Verified live 2026-11-06 (orca60):** `Insert_to_Pool: "N"` + `Parent_ID` = a paragraph (PAR) id creates the item UNDER that paragraph — `Get_Children(PAR)` lists it and its filter row carries the document's `Root Document Id` (22 User Requirements under PAR-16277, doc 8467, version 434). Contrast: `QW_Update_Object` + `Parent_ID` on an EXISTING item answers success but does not move it. |
 | `Status`, `Priority`, `Category` | string | Workflow defaults are used if omitted |
 | `Release_Version`, `Build_Version` | string | Extra version components (default `0`) |
 | `Assigned_to` | string | Username |
@@ -248,3 +248,18 @@ async function addObject({ baseUrl, authHeader, projectId, major, minor, name, d
 custom fields as `CS<n>_Name` (title) / `CS<n>_value`; ONE call at a time (parallel calls deadlocked SQL Server in the
 SBOM import). **Unverified live for PRT:** whether the new part shows in the tenant's Part Catalog filter at once.
 
+
+## Validation items on account `orcanos` (traceability-matrix, live 2026-11-04)
+`validation/scripts/sync_orcanos.py` created 1,001 items in project 102066 (pool): `Object_Type` = the type **label**
+(`Requirement`, `Software Requirement`, `Test Case`, `Risk`), `Insert_to_Pool: "Y"`, `External_ID` = our id, a custom
+field as `CS1_Name: "Automation ID"` + `CS1_value`. Auth = `OrcanosAPIKey` header (key in `.env.local`).
+- **Orcanos bug (open, report to the Orcanos team):** a Description holding SQL-like text (`LIKE '%t%'`) fails with
+  `Invalid column name 't'` — the text reaches a query unescaped. Reword the text; never send raw SQL in a description.
+- Updating these items: `QW_Update_Object` with `View_Version` = the version ID (`439`), see [qw-update-item.md](qw-update-item.md).
+
+## Live note — RISK (FMEA) item, account orcanos, project 102066 (2026-11-05)
+- Create with `Object_Type: "Risk"` (label; code `RISK`). Form fields by title (`CSn_Name` + `CSn_value`): **P1 / S1** (before), **P2 / S2** (after), D1 / D2, RPN1 / RPN2, **Cause Of Failure**, **Effect Of Failure**, **Corrective & Preventive Actions**.
+- P / S picklists take the **CODE** (`"1"`…`"5"`); the label (`"5-Severe"`) answers *Custom field P1 value is invalid* / *Max length of custom field S1 is 2*.
+- The three text fields are rich-text on the form, but HTML sent through the API is stored **as literal text** (`<p>…</p>` shows on screen) — send plain text.
+- `Description: ""` on `QW_Update_Object` clears the description (read back empty).
+- Read back with `QW_Get_Item_Add_Edit` (`Item_id` = the item) → `field[].OldValue`.

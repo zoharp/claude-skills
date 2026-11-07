@@ -3,7 +3,7 @@
 Record automated test results in an Orcanos **Execution Set** (work item type `T_EXEC`), with a result for every step.
 The flow came from the user (2026-11-04). The request bodies are copied from the swagger (`/orca60/api/swagger/docs/v2`).
 ✅ **Verified live 2026-11-04** (account `orcanos`, execution set 102142, API key header `OrcanosAPIKey`): 106 tests
-recorded in one call and read back. Working implementation: `traceability-matrix/validation/scripts/release_run.py`.
+recorded in one call and read back. Working implementation: `traceability-matrix/validation/scripts/release_run.py` (run by `validation.bat` before signing, 2026-11-05).
 
 **Read the XML once per run.** Don't fetch it per test. Run all the tests, fill in the one XML, send it once.
 
@@ -18,6 +18,9 @@ recorded in one call and read back. Working implementation: `traceability-matrix
   `Start`/`End` = `DD/MM/YYYY HH:MM:SS`; Run `Version` = the version under test as `04.34.001.0000` (free text,
   taken as given; it then shows in `LastRunVersion`). The test's `LastRunStatus` is computed by Orcanos from the steps.
 - You may **remove** `TestInExecLine`s you did not run (and set `TestCount`); the rest stay untouched.
+- ⚠️ **`SKIP` counts as FAIL** (live, 2026-11-05, set 102142): 105 tests sent with every step `SKIP` all showed
+  **Fail**. A test you did not really run (blocked, skipped) must be **removed** from the XML so it stays `NO_RUN`;
+  never send it as SKIP. Unverified: a PASS test with some SKIP steps probably reads Fail too.
 - `Record_Execution_Results_New` → `{"IsSuccess":true,"Data":"60400"}` (Data = the new run id).
 - `AddTestToExecutionSet` with 105 ids comma-separated in one call → `"Test case added to execution set successfully."`.
 - Put **every** test case you have in Orcanos into the set (automated or not); the ones not run stay `NO_RUN`.

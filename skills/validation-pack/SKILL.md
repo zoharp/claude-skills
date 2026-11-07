@@ -111,10 +111,46 @@ its observed value — never summarise a run you did not execute.
 
 **Results into Orcanos** (when the tests are Orcanos test cases): use an Execution Set. Read it ONCE, add EVERY test
 case that is in Orcanos but not in the set, put each step's result into the XML, then send it ONCE with
-`Record_Execution_Results_New` and read it back. On **deploy** run the FULL regression, not only the linked tests;
+`Record_Execution_Results_New` and read it back. For a **release** run the FULL regression, not only the linked tests;
 while developing, run only the tests a change touches. Reference implementation:
 `traceability-matrix/validation/scripts/release_run.py --full`.
+
+**Release in two runs** (traceability-matrix, 2026-11-05 — the pattern for any project with a signed deploy gate):
+a `validation.bat` does everything before the signature — check links, push requirements/tests to Orcanos, full
+regression recorded, build + upload the pack for this version + build fingerprint; it stops (uploads nothing) on a
+failed test. People sign. Then `deploy.bat` only checks the gate and runs to the end; a build changed since the
+upload, or not fully signed, gets a clear message and the deploy stops before any commit. Never put the tests back
+into the deploy script, and never upload a failing build for signing.
 See `orcanos-api/test-execution.md`. The local results and the STR are still written every time.
+
+**Run order is the project conftest's job** (learned 2026-11-06): `vt_plugin` sorts by `run_order` only when given
+`--vt-pack`. A runner that does not pass it (traceability-matrix `release_run.py --ui`) ran tests in FILE order, so a
+test needing an earlier test's panel was always Blocked. Put a `pytest_collection_modifyitems(trylast=True)` in the
+project's `automation/conftest.py` that sorts by `pack.json` → `run_order` (stable, unlisted keep file order).
+
+**First live runs — traps to check before suspecting the app** (full table: traceability-matrix
+`validation/VT_AUTOMATION_REVIEW.md` §3a): CSS upper-case (`inner_text` → `text_content`); `display:none` radios (click the
+label); forms read before they load; ambiguous locators (`.first` / exact / `:visible`); a test's own typing renaming
+the element it located by; ids read from row TEXT that holds a name looking like a key (read ids from the API); an
+error state the test never waits for (wait for success OR error, never 10 minutes for success alone). Fix the test
+first; call it an app bug only with live evidence (the Orcanos API or the app's own API), then fix with a developer test.
+
+**When the app and an old VT text disagree:** the user decided (traceability-matrix, 2026-11-06) to REWORD THE VT to the
+app — Change history row `1.x | date | Step n reworded to the app: …` — never change the app to match an old VT.
+
+**Working mode with the user:** one test (or module) at a time; the console has a *Copy results* button so the user
+pastes the output. Run single tests yourself only when the user asks, `--local` (nothing recorded in Orcanos); never a
+full run unasked; never start/stop the target. Keep `validation/LAST_RESULTS.md` (state per test) and
+`validation/OPEN_ISSUES.md` (what to do next) current at the end of a session.
+
+**Tests never delete what they create** (traceability-matrix, 2026-11-06, user decision): a created Orcanos item is
+appended to `validation/TO_DELETE.md` (`conftest.record_to_delete(item_id, key, note)`) and a person deletes it; no VT
+has a delete step. Throw-away records in the app's own DB (a private panel) may be removed by the test.
+
+**Live demo data instead of a fixed data set:** when the validation project's content changes, read every expected value
+from Orcanos in the same run (an `oracle` fixture reading the panel's filters) and say so in the VT pre-conditions —
+never hard-code keys or counts. Test users = `{username, password_env}` in `config.json`; a console page may show the
+login and *password set / not set*, never the password.
 
 ### E. Never
 - Never mark a test Pass, edit `results.json`, or delete a failed run to hide it.
@@ -128,6 +164,23 @@ By default every document ends with a blank **Approval** table (Author / Reviewe
 Set `meta.signing: "electronic"` in `pack.json` when the pack is e-signed in a tool that prints its own signature
 table at the TOP of each document (traceability-matrix *Release validation*, 2026-11-04): the bottom table is left
 out and the STR conclusion says "Subject to the signatures at the top of this document".
+
+## One Markdown file per item → Orcanos (traceability-matrix, 2026-11-04)
+For a large pack, keep one `.md` per URS / SRS / test / risk (YAML front matter = ids, links both ways, `orcanos_id`;
+body = text) and push them with a sync script: dry run, then push ONE item for the user to check, then bulk.
+`build_index.py` checks every link; `sync_orcanos.py --apply` (create + update + rewrite changed steps) or `--missing`
+(only what is not in Orcanos yet). What goes into Orcanos is minimal (user rule): a Requirement = name + Feature / Need /
+Risk / Acceptance criteria; an SRS = its Requirement text; a Test Case = Pre-conditions + real steps + Automation ID.
+Everything else stays in the .md. Never regenerate the files from a drafting script — it wipes `orcanos_id`.
+Reference: `traceability-matrix/validation/FORMAT.md` and `validation/scripts/`.
+
+**Risks** (2026-11-05): one `risks/RSK-NNN.md` per **High** URS, only validation risks (wrong evidence, wrong record
+write, data integrity, access, security). Front matter: `origin` (URS), `mitigation` (SRS), severity / probability
+1–5 before and residual probability after. In Orcanos (type RISK, user rules): **Description empty**; S1/P1, S2/P2 sent
+as codes `1`–`5`; Cause Of Failure, Effect Of Failure, **Corrective & Preventive Actions = what the software does, in
+words — never requirement or test ids** (the traces show them); all as plain text. Traces: URS → Risk default link type
+(*risk derived from this user requirement*), Risk ⇄ SRS link type **Risk Mitigation** — the project's trace rules must
+allow both item-type pairs first (refused both ways otherwise, 2026-11-05). Field details: `orcanos-api/qw-add-item.md`.
 
 ## Wording
 Every test (VT and VER) follows the [`test-writing`](../test-writing/SKILL.md) skill: plain name of the

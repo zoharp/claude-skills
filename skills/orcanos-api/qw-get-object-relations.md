@@ -15,6 +15,16 @@ scope.
 
 ## Endpoint
 
+> 🔴 **`ItemType` is REQUIRED since ~Nov 2026** (verified live on orca60 + orcanos, 2026-11-05). Without it every
+> form answers **404 "No HTTP resource was found"**; `ItemType=` (empty) answers **500** (SQL `@description` not
+> supplied). Any non-empty code works and returns the same relations (`RISK`, `REQ`, even `X` → identical result),
+> so pass the item's type when known, else a placeholder like `REQ`. Working forms:
+> `GET <base>/api/v2/Json/QW_Get_Object_Relations/<id>?ItemType=<code>` (Swagger form) and
+> `GET <base>/api/v2/Json/QW_Get_Object_Relations?Id=<id>&ItemType=<code>`. Relations now also carry
+> `Source_ItemName`, `Source_WorkItemCode`, `Target_ItemName`, `Target_WorkItemCode`, `LinkType`.
+> Our app: `orcanos_client.get_object_relations(..., item_type="")` sends it (fixed 2026-11-05 after the matrix
+> related items, Graph and risk walk silently got nothing).
+
 ```
 GET  <base>/api/v2/Json/QW_Get_Object_Relations?Id=<itemId>
 Authorization: Basic <base64(username:password)>  OR  Bearer <api-key>

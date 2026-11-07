@@ -151,6 +151,19 @@ reported as an error (rule *Success does not mean the field changed* above). Whe
 system field that needs its own request key instead of the CS pair is **unknown** — update this section after the
 first live write.
 
+## Live 2026-11-06 (orca60, traceability-matrix validation VT-105 / VT-107)
+
+- **`Parent_ID` + `Insert_to_Pool: "N"` does NOT move a pool item.** The DHF *Place* (`dhf_api.place_item`) sent
+  `QW_Update_Object` with `Parent_ID` = a paragraph (PAR id 16277, version 434) for pool item UR-27328: answered
+  `IsSuccess: true`, but `Get_Children` of the paragraph (in 434) does not list the item. Moving an existing item
+  under a parent needs another call — **not known yet; do not guess**. (`QW_Add_Object` with `Parent_ID` does create
+  under a parent.)
+- **`Status` takes the status LABEL** (`"Under Review"`, `"New"`): accepted on a User Requirement. The status CODE
+  (`"IN_PROGRESS"`) answers `QPack cannot find the specified status.`
+- `QW_Add_Object` with `Insert_to_Pool: "Y"` for *User Requirement* in project 7509 / 2.0 worked; `"N"` without a
+  `Parent_ID` answers `Constraint limitation: The object type you specified ('User Requirement') cannot added under
+  the selected parent.`
+
 ## See also
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - [QW_Get_Item_Add_Edit](qw-get-item-add-edit.md) — current values, titles, picklist labels (read before and after)

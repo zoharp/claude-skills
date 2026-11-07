@@ -138,3 +138,10 @@ async function addRelation({
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - [QW_Login](qw-login.md) — Authenticate and get session/API key
 - [qw-delete-trace.md](qw-delete-trace.md) — delete a relation (the inverse operation)
+
+## Live note (2026-11-05, account orcanos, project 102066)
+- "Traceability from <A> to <B> is not allowed" = the project's trace rules (admin setting), not a bad call. Risk ⇄ Requirement and Risk ⇄ Software Requirement were refused in **both** directions until allowed there.
+- On account `orcanos` `QW_AddRelation` works with the type codes `REQ` / `SRS` / `T_CASE` (1,178 traces, 2026-11-04) while `QW_Add_Relations_Custom_Code` answers "Enter a valid ItemId/ItemType"; on orca60 it is the other way round — try `QW_AddRelation` first, fall back to the custom-code call (`validation/scripts/sync_orcanos.py`). Source = child, target = parent.
+- When `QW_AddRelation` refuses, the fallback `QW_Add_Relations_Custom_Code` may answer only "Enter a valid ItemId/ItemType" — read the first call's message, it holds the real reason.
+- `RelationType: "Risk Mitigation"` (Risk ⇄ Software Requirement) did NOT get past "not allowed" either — the type does not override the project's trace rules; an admin must allow the item-type pair first. Sync convention (validation pack): URS → Risk = default type, Risk ⇄ SRS = "Risk Mitigation".
+- **2026-11-06 (orca60, traceability-matrix VT-208):** `QW_Add_Relations_Custom_Code` with `RelationType: "Risk Mitigation"` (new MecRS item → RISK) IS stored with that type when the pair is allowed — read back via `QW_Get_Object_Relations`. An EMPTY `RelationType` stores `Dependent On` with no warning: the risk module once sent empty because its relation cache was empty (before the `ItemType` fix), so a mitigation was created untyped. Re-adding an existing pair answers "The selected item is already related" — a type cannot be changed that way.

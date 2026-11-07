@@ -101,6 +101,21 @@ markup. Conversely `richEditor` fields (`document_revision`) can arrive as plain
 and decode in a loop, because values can be double-encoded (`&lt;a href=…`). This is the same trap
 documented for `Traced Items Info` and for `matrix_api._clean`.
 
+## ⚠️ `Traced Items Info` can show the NAME before the key (live, orca60, 2026-11-06)
+
+An entry is either the key (`SR-4444`, `TC-8789 (7678)`, `TC-1 (Pass)`) **or `Name (KEY)`** — e.g.
+`<a … data-item-type='MEC' data-item-id='27255'> VAL-208 11052312 (MecRS-27255)</a>`. Taking the first key-shaped
+token reads a name such as `VAL-208` as the key. Rule: a whole key in **trailing brackets** wins; otherwise the first
+key token (a number or a word in brackets is not a key). The `<a>` also carries `data-item-id` — the most reliable id.
+traceability-matrix: `orcanos_client.extract_traced_keys`, test `tests/test_traced_keys.py`.
+
+## ⚠️ `Visible: "N"` fields come on EVERY row — never show them (2026-11-06)
+
+Every filter row includes the system fields `ID`, `Original_id`, `IsHead` (In Pool), `IsBranch`, `IsLink`
+(Copy As Link), `DMS_Revision`, `DMS_Routing_State` with `Visible: "N"`, whether or not the filter selects them.
+Keep them for lookups (id, original id) but leave them out of any "every column the filter shows" view — the
+traceability-matrix risk register's Detail view listed all seven until it filtered on `Visible`.
+
 ## ⚠️ Three names for one type
 
 One item carries the type in three different forms, and they are all different strings:
@@ -184,7 +199,7 @@ is a *different graph* from the trace links. See [Get_Children](get-children.md)
 | `Root_Document_Name` | Document Name | text | When the item sits under paragraphs whose root is a **document**, this is that document's name. |
 | `Root_Document` | Root Document Id | text | The same root document's **id**. |
 | `IsHead` | In Pool | combobox | `1` = the item is **in the pool (backlog)**; `0` = it is placed in the tree. A pool item has no tree parent, which is why `Parent_name` can be populated on one item and empty on another of the same type. |
-| `IsLink` | Copy As Link | combobox | `1` = this row is a **link copy** — a pointer to one item shown in more than one place in the tree. Two rows can therefore be the same underlying item. `Visible: "N"`. |
+| `IsLink` | Copy As Link | combobox | `1` = this row is a **link copy** — a pointer to one item shown in more than one place in the tree. Two rows can therefore be the same underlying item. `Visible: "N"`. A link is NOT found under the parent it was linked to by `parent_original_id = <id>` — list a node's links with [Get_Children](get-children.md) (trap 5, 2026-11-06). |
 | `is_template` | Is Template Indicator | combobox | `1` = the item is marked as a **template**; users can "add from template", which copies it *and its children*. |
 | `Project_name` | Project Name | text | The owning project's name. |
 

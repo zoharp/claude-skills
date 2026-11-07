@@ -90,8 +90,8 @@ project it had grown to **313,180 chars, 76% of the file**, pushing it to 411 KB
 burning ~100k tokens per session on history that was almost never relevant.
 
 **Where the entry goes** — check the project's own convention first:
-- **traceability-matrix:** `docs/changelog/CHANGELOG-v{major}.md`, prepended newest-first, **plus**
-  its one-line row in `docs/changelog/README.md`
+- **traceability-matrix:** `design/docs/changelog/CHANGELOG-v{major}.md`, prepended newest-first, **plus**
+  its one-line row in `design/docs/changelog/README.md` (moved from `docs/` 2026-11-06)
 - otherwise: the repo's `CHANGELOG.md`, or create `docs/changelog/` following the above
 
 **What stays in `CLAUDE.md`:** the `### Current versions` block, and — only when the release
@@ -111,7 +111,7 @@ If the change involved any of the following, update the corresponding section in
 - [ ] `CLAUDE.md` → `### Current versions` updated
 - [ ] `release_notes.json` prepended with new entry (icon + **bold label** — detail)
 - [ ] Each user-facing change ends with a verified `[Help: Page](https://…)` link to the manual page it affects
-- [ ] Long-form entry prepended to the **changelog file** (`docs/changelog/CHANGELOG-vN.md`), **not** `CLAUDE.md`
-- [ ] Its one-line row added to `docs/changelog/README.md`
+- [ ] Long-form entry prepended to the **changelog file** (traceability-matrix: `design/docs/changelog/CHANGELOG-vN.md`), **not** `CLAUDE.md`
+- [ ] Its one-line row added to the changelog's `README.md`
 - [ ] A new **Critical Note** in `CLAUDE.md` only if the release exposed a silent-failure trap
 - [ ] `SCHEMA.md` updated if schema changed

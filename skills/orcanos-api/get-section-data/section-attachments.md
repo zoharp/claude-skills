@@ -3,6 +3,13 @@
 `QW_Get_Section_Data?Section_Name=Attachments` lists what is on an item's **Attachments** tab: plain
 uploaded files (a STEP model, a spreadsheet, a Word file) and linked controlled documents.
 
+> **One table, two kinds of row (user, 2026-11-07).** In the Orcanos database a DMS item's **revisions** (its
+> controlled file) and its plain **attachments** are both rows of the same **Attachments** table, told apart by
+> `Attach_type`. A **part (PRT)** has only plain attachments (`FILE`); a **DMS item** has revisions *and* may have
+> plain attachments. A revision row fills `Revision` / `Change_no` / `Routing_State` / `Doc_no`; a `FILE` leaves them
+> null. Read revisions through the [Revisions](section-revisions.md) section (approved pick, PDF preview), files
+> through this one — and drop non-`FILE` types here (`DMS` / `URL` / `LINK`), as the BOM export does.
+
 > **Measured against `orca60` on 2026-09-25** — `MR_REQ 18142`, `Ver_Id 434`. Transport, envelope
 > and the `field[]` row shape are in [qw-get-section-data.md](qw-get-section-data.md).
 
@@ -47,6 +54,14 @@ single object when there is one (XML→JSON quirk).
 | `Attach_type` | `FILE` = a plain upload. `DMS` = a linked controlled document (its file is a DMS revision — use [Revisions](section-revisions.md)). |
 | `Attach_size` | Bytes — matched the downloaded size exactly. |
 | `Attach_path` | Direct store path — **blocked**, like Revisions' `pdf_path`. Don't use it. |
+
+## Knowing a row has attachments without this call — `AttachInd`
+
+A filter can select **`AttachInd`** (Title **"Attachments Indicator"**, combobox, Text `"0"` / `"1"`) — verified
+orca60 2026-11-07, Part Catalog filter 852: 10 of 52 rows `1`, each with real `FILE` rows here. Use it to decide
+whether to show an attachment icon; read this section only when the user opens the list. ⚠️ A filter returns only the
+columns it selects — **absent ≠ `0`**: treat a missing column as "not configured" (no icon), never as "no files".
+⚠️ It counts **plain attachments only** (user, 2026-11-07): a DMS item with revisions but no attachment is `0` — never use it to tell whether a DMS item has a controlled file.
 
 ## Downloading one
 

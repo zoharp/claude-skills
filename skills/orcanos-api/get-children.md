@@ -123,7 +123,12 @@ than re-versioned. So:
 - **Don't build the URL yourself** from the version you requested — `ItemURL` already carries the
   child's own version (`…/web/332/…` for that item). Rebuilding with the parent's version points
   at the wrong (or a non-existent) page.
-- **Recurse with the child's own `Ver_Id`**, not the one you started from.
+- ~~Recurse with the child's own `Ver_Id`~~ — **WRONG (corrected 2026-11-05, live orca60):**
+  recurse in the version you are viewing (the document's), and fall back to the child's own
+  `Ver_Id` only when that call fails. An inherited node's own `Ver_Id` is an OLDER version, and read
+  there it lacks every child added since: `Get_Children/8757` (PAR-8757, `Ver_Id 332`) lists 7
+  children with `?Ver_Id=434` (incl. a paragraph and an item created in 434) but only 5 with
+  `?Ver_Id=332`. Same for read-backs after placing / creating an item under a paragraph.
 - Don't treat a differing `Ver_Id` as an error or filter those rows out — they are real children.
 
 **2. `Key` prefix ≠ `Type`.** `Key` starts with the tenant's **custom code** (`PAR`), while
@@ -138,6 +143,20 @@ These are placeholders Orcanos expands into a live filter result inside its own 
 `stripHtml()` leaves just the caption text, which reads like prose but is really "a table renders
 here" — if the description matters, detect `name="FILTER_\d+"` and render a marker rather than
 silently flattening it.
+
+**5. Copy-as-link items (2026-11-06).** Orcanos *Copy as link*
+(https://help.orcanos.com/knowledgebase/copy-as-link-feature/) places ONE item under several
+parents of the product tree — same key, same history; edits show everywhere; underlined in the
+tree, blue in the grid; Traceability tab gets a *Copy As Link* relation; only Delete / Go to Source
+on the link; default for DMS + Test Cases, same project only, not under another link, not for an
+item with children. A saved filter lists the link as its own row (`IsLink = "1"`, same key), but
+**`Filter_By parent_original_id = <node>` does not return it under the node it was linked to**
+(user report, BOM Viewer). `Get_Children` of that node is the reliable way to list it.
+The traceability-matrix BOM Viewer (`bom_api.tree_only_children`) reads `Get_Children` on every
+expand and fetches the children the filter missed by `ID IN (…)` from their type's filter; a
+child no filter returns is drawn from the `Get_Children` answer. **Not verified live yet:** which
+`ID` `Get_Children` gives a link (the link row's or the original's) and what a link row's
+`parent_original_id` holds — record it here after the first live run.
 
 **4. Direct children only.** There is no depth parameter — a full tree means one call per node.
 
