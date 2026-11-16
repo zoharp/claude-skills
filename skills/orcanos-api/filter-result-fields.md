@@ -225,7 +225,7 @@ Orcanos' e-signature workflow. `DMS_Routing_State` is the live state; the dates 
 
 | Name | Title | Type | What it is |
 |---|---|---|---|
-| `DMS_Routing_State` | Routing State | combobox | Current routing state (`Draft`, …). This is the signature workflow's state — **distinct from `Obj_status`**. |
+| `DMS_Routing_State` | Routing State | combobox | Current routing state: `Draft`, `In Work`, `Approved`, `Pending Approved`, `Obsolete`, `Cancel`, `Reject`. This is the signature workflow's state — **distinct from `Obj_status`**, and for DMS items it is **the** state: DMS items don't use Status (product owner, 2026-11-13; `orcanos-processes/orcanos-document-control-process.md`). |
 | `DMS_Routing_Start_Date` | Routing Start Date | date | When routing began. |
 | `DMS_Routing_Due_Date` | Routing Due Date | date | When the signatures are due. |
 | `DMS_Routing_End_Date` | **Approved Date** | date | ⚠️ Title says *Approved Date*, name says *routing end*: **the date the item was signed electronically**, i.e. routing finished. Same thing — the item is approved because the routing ended. |
@@ -253,6 +253,13 @@ Populated only when the item is linked to an ECO; all `null` otherwise.
 | `Created_date` | Created Date | date | `YYYY-MM-DD HH:mm:ss`. |
 | `Updated_by` | Updated By | combobox | **User id**. |
 | `Updated_date` | Updated Date | date | `YYYY-MM-DD HH:mm:ss`. |
+
+> ⚠️ **A DEFECT has no `Created_date` column** (verified live, orca60, 2026-11-09: none of 18 Defect filters in
+> project 7506 selects it, and the column picker offers none). Defects live in their own table
+> ([qw-add-defect.md](qw-add-defect.md)); their creation stamp is **`Detection_date`** ("Detection Date",
+> type `date`, value date-only, e.g. `10/11/2026`). `Updated_date` exists on defects as on every type.
+> Code that needs "created" must fall back `Created_date` → `Detection_date` (traceability-matrix
+> `incremental.CREATED_ALT_NAMES`), and its message must name *Detection Date* for a Defect.
 
 ---
 

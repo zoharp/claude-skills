@@ -219,6 +219,13 @@
         }
       ]
     },
+    "iso42001": {
+      "intro": "ISO/IEC 42001 certifies an organisation, not a product: list every Annex A control and say how the product SUPPORTS it.",
+      "legend": "Met · Partial · Gap · Org (the organisation's own AIMS) · NA",
+      "rows": [ { "control": "A.9.2", "title": "Processes for responsible use", "how": "…", "evidence": "URS-… · VT-…", "status": "Met" } ],
+      "gaps": []
+    },
+
     "ai": {
       "intro": "Some modules offer AI assistance. AI is opt-in per account and off unless licensed. In every case the model proposes and a person decides: no AI output becomes an Orcanos record without explicit human confirmation.",
       "features": [

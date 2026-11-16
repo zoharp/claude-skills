@@ -51,6 +51,14 @@ load-bearing): the newest row's `Attach_name` is the file. ⚠️ **Unverified l
 letter is set by Orcanos (A for the first) and whether a revision added to an **approved** document is refused or
 starts a new draft — test before relying on it. A DMS file download is AUDITED (Doc Review, Note #81).
 
+> ⚠️ **Live 2026-11-07 (orca60, DMS-12769, current revision D = Draft):** `Object_Type=DMS`, `Attachment_Type=FILE`,
+> `KeepOldName=YES` answered `{"IsSuccess": true, "Data": {"ID": "3529", "Name": "Writing manual SOP(2).docx", …}}`
+> but **no revision was added and the draft's file was not replaced** — Revisions read back identical (4 rows, same
+> IDs/sizes); the file went to the item's Attachments tab with `(2)` appended. So on a document whose latest revision
+> is a Draft this call does NOT change the document. Whether it starts a new revision on an *approved* document is
+> still unverified. No call is known yet that replaces a draft revision's file (validation VT-304 step 4 is Blocked
+> on it). Leftover test attachments on DMS-12769: ids 3529 and the one from the run before (same name pattern).
+
 > ✅ **Verified live** on orca60, 2026-10-18: `Object_Type=DEFECT` on DEFECT-2305 → `IsSuccess: true`, the file
 > listed on the Attachments tab (ID 3490, `Attach_description` = the text sent). Still open: `OBJECT` for a non-defect
 > type, and whether the answer carries the new attachment's id — the traceability-matrix integration dedupes by file
@@ -87,4 +95,13 @@ is ignored there.
 
 ## See also
 - [Qw_Add_MiscAttachment](qw-add-misc-attachment.md) — images inside rich text
-- Used by: traceability-matrix `orcanos_client.add_attachment` (Integrations, v4.29.0); release validation (2026-11-04: the signed pack zip as the first **revision** of a NEW DMS item — `Object_Type: DMS`, `Attachment_Type: FILE`, read back on Revisions — **unverified live**); also the SBOM import (file on the release) and the BOM file import (2026-10-29: images on NEW Part (PRT) items + the BOM file on the product's part, `Object_Type: OBJECT`) — the PRT use is **unverified live**
+- Used by: traceability-matrix Edit in Office 365 (2026-11-13, `o365_api.py`: the redline + clean .docx of a Word
+  draft edited in SharePoint, `OBJECT` on the DMS item — unverified live; see `microsoft-graph-sharepoint` skill);
+  `orcanos_client.add_attachment` (Integrations, v4.29.0); release validation (2026-11-04: the signed pack zip as the first **revision** of a NEW DMS item — `Object_Type: DMS`, `Attachment_Type: FILE`, read back on Revisions — **unverified live**); also the SBOM import (file on the release) and the BOM file import (2026-10-29: images on NEW Part (PRT) items + the BOM file on the product's part, `Object_Type: OBJECT`) — the PRT use is **unverified live**
+
+> ✅ **`OBJECT` verified live** on orca60, 2026-11-12 (Supplier Portal probe, SCAR-27499, version 422): `Object_Type=OBJECT`,
+> `Attachment_Type=FILE` → `{"IsSuccess":true,"Data":{"ID":"3540","Name":"portal_probe.txt","Url":"…/PROJECT_12495/"}}` — the
+> answer DOES carry the new attachment's id; read back on `QW_Get_Section_Data?Section_Name=Attachments&Ver_Id=422`
+> (name, description, path `…/OBJECT_27499_portal_probe.txt`). Leftover on SCAR-27499 (test item, to delete).
+> Supplier Portal Phase 3 (2026-11-13, `supplier_portal_certs.attach_files`): an accepted certificate's file goes on the
+> **Supplier** item (`Object_Type=OBJECT`), the returned `Data.ID` kept as the attachment id — on a SUPLR item **unverified live**.

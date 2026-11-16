@@ -86,6 +86,11 @@ GET <base>/api/v2/Json/GetSystemTableValues?TableName=REF_CAPA_STATUS&PageNo=1&P
    For "which transitions are allowed, and which e-signature gates them" use
    `orcanos-workflow-chart` (states + transitions are UI-only, no API).
 8. Page through `TotalRecords` if > 100 (never seen for a status table, but cheap to loop).
+9. **The completion date is Orcanos's, not ours** (user, 2026-11-12). When an item moves to a status with
+   `IsComplete: 1`, Orcanos fills the item's **Completion Date** itself. Never map or write a "done on /
+   completed date" field. To mark an item done, set its **status** to an `IsComplete` one (suggest the first
+   `IsComplete` row, and let the person change it), then read the item back for the date. Used by the Supplier
+   Portal's Action Items (traceability-matrix `supplier_portal_map.ACTION_STEPS`).
 
 ---
 
@@ -131,7 +136,16 @@ project's item-type list — not its code (`CA`).
 - [qw-get-item-add-edit.md](qw-get-item-add-edit.md) — the form; its Status `val` is current-state-only
 - [qw-update-item.md](qw-update-item.md) — writing a status (label, not code; may be e-signature-gated)
 - `orcanos-workflow-chart` — transitions and the e-signature process on each
+- `Orcanos-infra/orcanos-supplier.md` · `orcanos-processes/orcanos-supplier-process.md` — Action Items done by status (rule 9) under a SCAR
 
 ## Not on every server (2026-10-29)
 
 `us.orcanos.com` answers `GetSystemTable` / `GetSystemTableValues` with **HTTP 404 "No HTTP resource was found"** (route missing from that build; app.orcanos.com answers 401 without login = exists). A 404 here means *cannot read*, not *no table* — the traceability DHF reports it as "could not be read" (`get_item_statuses_ex`).
+
+## Seen live: Supplier (orca60, 2026-11-13)
+The Supplier form's **Approval Status** is `Obj_status` (the workflow field). The Add form listed only
+*New, Under Review*. The table "Supplier Status" holds all six: New, Under Review, Approved (order 2),
+Awaiting Annual Review (3), Obsolete (4), Awaiting Obsolete (5). The traceability Supplier Portal now
+replaces the options of any `Obj_status` field with this list on its field-matching screen
+(`supplier_portal_api.orcanos_fields`). Writing a status the workflow does not allow from the
+current state may be refused or not stick, so always read it back.

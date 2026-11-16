@@ -93,7 +93,7 @@ Keyed on `column` (the stable key — `title` is **not** unique here: two fields
 |---|---|---|---|
 | `Revision` | Revision | Y | The document revision this file belongs to — `A`, `B`, `V`… |
 | `Change_no` | Change # | Y | The **minor change within that revision**. `(Revision, Change_no)` together identify a row; `Revision` alone does not. |
-| `Routing_State` | Routing State | Y | Where *this revision* got to: `Draft`, `In Work`, `Pending Approved`, `Approved`, `Reject`, `Cancel`, **`Obsolete`**. ⚠️ **This — not `is_obsolete` — is how you tell a superseded revision** (observed on orca60: rev A.1 reads `Obsolete`). |
+| `Routing_State` | Routing State | Y | Where *this revision* got to: `Draft`, `In Work`, `Pending Approved` (signed, waiting for its ECO's release → then `Approved` automatically), `Approved` (signed + released), `Reject` (a signer rejected), `Cancel` (e-sign cancelled midway), **`Obsolete`** (explicit, or automatic when a newer revision is approved). Meanings: `orcanos-processes/orcanos-document-control-process.md`. ⚠️ **This — not `is_obsolete` — is how you tell a superseded revision** (observed on orca60: rev A.1 reads `Obsolete`). |
 | `Effective_Date` | Approved Date | Y | When the revision was approved. `null` until it is. |
 | `color_code` | Color Code | N | The hex swatch Orcanos uses for that routing state (`#97E0AC` approved, `#C4C0C6` obsolete) — reuse it to stay consistent with their UI. |
 | `is_obsolete` | is_obsolete | N | ⚠️ **Unreliable — observed EMPTY on an obsolete revision** (orca60, 2026-09-01: rev A.1 was `Routing_State: "Obsolete"` with `is_obsolete: ""`). Never branch on it. Use `Routing_State === 'Obsolete'`. |

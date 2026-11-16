@@ -14,6 +14,23 @@ body (`Delete_Relation_Parameter`), split by the key form they resolve:
 > exist answers `IsSuccess: true` (check `Data.Status`, and re-read with
 > [QW_Get_Object_Relations](qw-get-object-relations.md) to be sure); (3) whether the direction must
 > match the one the link was created with. Update this file after the first live call.
+>
+> 🔴 **First live calls (orca60, 2026-11-07, validation VT-031):** a trace made with
+> `QW_Add_Relations_Custom_Code` (`TC-27432` → `SR-27318`, LinkType *Dependent On*) was deleted from the
+> traceability-matrix graph — the app tried `QW_Delete_Relation` `{"Source_Key":"TC-27432","Target_Key":"SR-27318"}`
+> first, Orcanos answered **success**, and the trace was **still there** on `QW_Get_Object_Relations`. The validation
+> test's own clean-up (same call first) did the same. So `QW_Delete_Relation` with **display** keys answers success
+> and deletes nothing. Not yet known: whether `QW_Delete_Relation_Custom_Code` (or the reverse direction) works —
+> live probing was not permitted in that session. **Always re-read the relations after a delete**; the
+> traceability-matrix route does since 2026-11-07 (`matrix_api._trace_present`) and tries the next form when the
+> trace is still there.
+
+> ✅ **VERIFIED live (orca60, 2026-11-15, VT-031):** `QW_Delete_Relation` with **ORIGINAL type codes**
+> `{"Source_Key":"T_CASE-27600","Target_Key":"SRS-27486"}` answered `{"Status":"OK"}` and the trace was gone on
+> re-read (deeper → shallower, the direction it was created). With display keys (`TC-27600`/`SR-27486`) the app's
+> forms answered *No relation found between source and target provided* or a false success. `QW_Get_Object_Relations`
+> names ends only by CUSTOM code (`Source_WorkItemCode` = `TC`), so take the original code from the item's type
+> (QW_Login `Item_type[].Code`, or the panel level's `work_item_type`). traceability-matrix: `matrix_api._original_key_pairs`.
 
 ## Endpoint
 

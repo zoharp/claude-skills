@@ -190,6 +190,7 @@ state for dependent fields, rather than re-implementing the dependency graph cli
 ---
 
 ## See also
+- [Work Item List Automation](../Orcanos-infra/orcanos-work-item-list-automation.md) — a combo based on work items: `val[]` code = the listed item's **ID**, label = the shown text (e.g. `25937-Test supplier`); map filter text → ID through these options
 - [SKILL.md](SKILL.md) — base URL, auth, XML→JSON quirks
 - [QW_Login](qw-login.md) — `Item_type[].Code`, `Project.Id`, `Ver_id`
 - [QW_Add_Object](qw-add-item.md) — submit the item using this form's field names/values

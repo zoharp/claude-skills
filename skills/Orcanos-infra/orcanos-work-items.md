@@ -38,8 +38,8 @@ If a thing needs to be traceable, in Orcanos it is a work item.
 | **Custom code** | the tenant's display prefix (`UR`, `TC`, `SR`) | What the **user** sees. Configurable per tenant |
 | **Key** | `{code}-{id}` — e.g. `UR-26514` | Displayed with the *custom* code. **A freshly created item's `Key` still carries the ORIGINAL code** (`MR_REQ-26514`) until re-read |
 | **Name** | the title | `Obj_name` on most types — **`Synopsis` on defects**. Always try both |
-| **Description** | rich HTML | Frequently **double-encoded** (`&amp;nbsp;`) — decode in a loop |
-| **Project + Version** | items are scoped to `(project_id, version_id)` | A project's identity is `(project, version)`, not project alone |
+| **Description** | rich HTML (`obj_description`) | Frequently **double-encoded** (`&amp;nbsp;`) — decode in a loop. ⚠️ Can be a **smart template** with embedded `FIELD_<code>` / `FILTER_<id>` anchors (a print layout, not text) — see `orcanos-smart-description.md` |
+| **Project + Version** | items are scoped to `(project_id, version_id)` | A project's identity is `(project, version)`, not project alone — see `orcanos-version-management.md` / `orcanos-database.md` |
 | **Fields** | per type, per tenant | Read them live via `QW_Get_Item_Add_Edit`; never hard-code a field set |
 | **Relations** | the traceability graph | `Traced Items Info` / `QW_Get_Object_Relations` |
 | **Children** | the containment/outline tree | `Get_Children` — **a different graph** from relations (§3.4) |
@@ -186,6 +186,8 @@ Everything after the key is not part of it.
 | — | Non Conformance | `NCR` | A recorded non-conformance. | ◐ |
 | — | Risk | `RISK` | A risk record (ISO 14971 / FMEA). Traces down to the requirements that mitigate it ("Risk Mitigation" link), which trace to tests. Scored by the project's FMEA settings — see `orcanos-processes/orcanos-risk-process.md`. Code confirmed live on orca60 (2026-10-07). | ✅ |
 | — | Engineering Change Order | `ECO` | A controlled change. Commonly the outcome of a CAPA. | ◐ |
+| `SCAR` | Supplier Corrective Action Request | `SCAR` | A request to a supplier to contain, find the root cause of and fix a nonconformity; traced from an NCR, optionally to a CAPA. Added to QMS E-Forms on orca60 2026-11-12; live field titles not recorded. See `orcanos-supplier.md`. | ✅ |
+| `ACTION_ITEM` | Action Item | — | One action with Category (incl. *Corrective Actions* / *Preventive Action*), Due Date and status; a SCAR's actions are Action Items **under** the SCAR. Completion date is filled by Orcanos on an `IsComplete` status. See `orcanos-supplier.md`. | ✅ |
 
 > All six are **real types on the orca60 tenant** — they appear in that tenant's data and in its Ask
 > Paul prompt names. **The original codes are inferred and must be confirmed** before use in a call.
@@ -195,7 +197,7 @@ Everything after the key is not part of it.
 Orcanos ships these as an eQMS; the item types exist, but no code here is confirmed. Fill in as they
 are verified, and give each its own module skill.
 
-`Audit` · `Supplier / Vendor` · `Design Review` · `Change Request` · `Hazard / FMEA` ·
+`Audit` · `Supplier / Vendor` (key prefix `SUPLR-` seen live, original code still unread — see `orcanos-supplier.md`) · `Design Review` · `Change Request` · `Hazard / FMEA` ·
 `Test Set / Test Suite` · `Release` · `Project` · `Task` · `DHF / Design History File`
 
 **Seen live in a tenant's item-type navigator** (labels only — codes still unread):
@@ -274,4 +276,5 @@ Three things to remember when reading it:
 | The login response in detail, incl. permission letters | `orcanos-api/qw-login.md` |
 | Fields of a given type on a given tenant | `orcanos-form-builder` |
 | Creating an item and tracing it | `orcanos-api/qw-add-item.md`, `qw-add-trace.md` |
+| Supplier, SCAR, Action Item (QMS E-Forms) | `orcanos-supplier.md` · process `orcanos-processes/orcanos-supplier-process.md` |
 | The relations graph vs the children tree | `orcanos-api/qw-get-object-relations.md`, `get-children.md` |

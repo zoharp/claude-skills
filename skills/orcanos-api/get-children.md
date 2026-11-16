@@ -130,6 +130,9 @@ than re-versioned. So:
   children with `?Ver_Id=434` (incl. a paragraph and an item created in 434) but only 5 with
   `?Ver_Id=332`. Same for read-backs after placing / creating an item under a paragraph.
 - Don't treat a differing `Ver_Id` as an error or filter those rows out — they are real children.
+- **Exception — the `DOC` root:** its "open in Orcanos" link is the **product tree**,
+  `{base}/web/{ver}/tree?ItemId={id}` (same ver + id as its `ItemURL`), not the item form
+  (product owner, 2026-11-10; `Orcanos-infra/orcanos-documents.md` §4a). Paragraphs and items keep `ItemURL`.
 
 **2. `Key` prefix ≠ `Type`.** `Key` starts with the tenant's **custom code** (`PAR`), while
 `Type` is the **original** code (`REQ_HD`). Display the key; key any API call or URL off `Type`.
@@ -143,6 +146,16 @@ These are placeholders Orcanos expands into a live filter result inside its own 
 `stripHtml()` leaves just the caption text, which reads like prose but is really "a table renders
 here" — if the description matters, detect `name="FILTER_\d+"` and render a marker rather than
 silently flattening it.
+
+**4b. Never pass a PROJECT id (verified live, orca60 2026-11-13).** `Get_Children/10045?Ver_Id=363` (project *Document
+Control*) ran **30 s** and answered `IsSuccess:false` *"The statement terminated. The maximum recursion 100 has been
+exhausted before statement completion."* For the DMS tree, read the containers from a filter instead: any *All*-type
+filter that selects **Parent Name**, run with `Item_Type` = `WrkSpc` (DMS Workspace) / `FOLDER` (DMS Folder) / `DHF` /
+`DMR`; each row's `Parent_name` is `PROJECT-10045: Document Control`, `WrkSpc-20439: Archive #2`, `FOLDER-12518: …`.
+`Get_Children` of a **folder** works (0.4 s, its DMS items: `Type: DMS`). traceability-matrix `doc_control_api._tree_raw`,
+Note #132. The filter may select **Parent Original Id** instead of Parent Name: a bare number = the project id or
+another row's `Original_id`. Set the filter's sort to **Treeview order** and keep the row order to get Orcanos's sibling
+order (`qw-get-filter-results.md` → *Building a tree from a filter*, 2026-11-13).
 
 **5. Copy-as-link items (2026-11-06).** Orcanos *Copy as link*
 (https://help.orcanos.com/knowledgebase/copy-as-link-feature/) places ONE item under several
@@ -201,7 +214,11 @@ once (its second appearance renders as a leaf) instead of looping forever.
 
 ## See also
 - `Orcanos-infra/orcanos-documents.md` — what the tree means: DOC → paragraphs → items, `Root_Document`, the pool
+- `Orcanos-infra/orcanos-supplier.md` — a SCAR's Action Items are its children; an action counts only when this call returns it under the SCAR
 - [SKILL.md](SKILL.md) — base URL, auth, XML→JSON quirks
 - [qw-get-object.md](qw-get-object.md) — one item's **full field set** (`Field[]`); this endpoint returns a fixed, pre-resolved subset instead
 - [qw-get-object-relations.md](qw-get-object-relations.md) — **trace** links (a different graph from this parent/child tree), plus the cycle-safe expansion pattern
 - [qw-get-filter-results.md](qw-get-filter-results.md) — batch fetch by saved filter, incl. `Traced Items Info`
+
+---
+**See also:** `Orcanos-infra/orcanos-version-management.md` (Views, branching, item version labels) and `Orcanos-infra/orcanos-database.md` (why `ID` ≠ `Original_id`: `objects` / `objects_ver_view`).

@@ -86,6 +86,11 @@ A value put in `CS1_Name` fails: `Custom field PROJ-9 not found.`
 
 ---
 
+### Created date on a defect (2026-11-09, live)
+Filters on DEFECT never return `Created_date` — the defect's creation stamp is **`Detection_date`**
+(*Detection Date*, date only). Use it wherever another type uses Created Date (change detection, "new since").
+See [filter-result-fields.md](filter-result-fields.md) → *Audit*.
+
 ## Response
 
 ```json

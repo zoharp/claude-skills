@@ -8,6 +8,18 @@ Assigned To, Description, custom fields…) as a flat `Field` array. Use it to r
 > ⚠️ **Deprecated upstream** in favour of a newer `Get_Object`. It still works on current
 > instances (verified against orca60, 2026-07-11). Try `QW_Get_Object` first and fall back to
 > `Get_Object` on a 404.
+>
+> 🔴 **Gone on orca60 since ~Nov 2026** (verified live 2026-11-07): `QW_Get_Object/<id>`, `?id=`, a POST, and
+> `&ItemType=` all answer **404 "No HTTP resource was found"**. **`GET Get_Object/<id>`** (or `Get_Object?id=<id>`)
+> works: `{"IsSuccess":true,"Data":{"Id":"27429","Field":[{"Name","Text"}…]}}` — only ~14 fields (Name, Design
+> Status, Assigned To, Category, Version, Routing State, Last Test Run Result, Description …), `Name` only (no
+> `Title`), and **no Created By / Created Date**. An unknown id answers 200 `IsSuccess:false` "Item not found.".
+> The creator is not on `QW_Get_Object_View` or the Edit form (`QW_Get_Item_Add_Edit`) either — only a filter
+> that selects `Created_by` returns it. `QW_Get_Object_View` does carry `Freeze` ("0"/"1").
+> **No `Type` field either** (verified 2026-11-07, SRS 12851): code that read the type CODE off this answer
+> (traceability-matrix `risk_api.orcanos_links`) got nothing. Get the code elsewhere: a filter row's
+> `Object.Type`, or the `data-item-type='SRS' data-item-id='12851'` attributes Orcanos writes into a
+> Traced Items Info hyperlink. Relations' `*_WorkItemCode` is the key PREFIX (`SR`), not the code.
 
 **Reference:** https://help.orcanos.com/knowledgebase/qw_get_object-rest-api/
 
@@ -115,6 +127,7 @@ so re-hovering the same item doesn't refetch.
 ---
 
 ## See also
+- [../Orcanos-infra/orcanos-smart-description.md](../Orcanos-infra/orcanos-smart-description.md) — Description may be a **template** with `FIELD_<code>` / `FILTER_<id>` anchors (names, not values) — never show / feed to AI raw
 - [SKILL.md](SKILL.md) — base URL, auth, XML→JSON quirks, `fieldValue()` helper
 - [qw-get-object-relations.md](qw-get-object-relations.md) — the id-only relations this enriches
 - [qw-get-filter-results.md](qw-get-filter-results.md) — batch item fetch via a saved filter

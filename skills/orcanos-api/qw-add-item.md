@@ -263,3 +263,13 @@ field as `CS1_Name: "Automation ID"` + `CS1_value`. Auth = `OrcanosAPIKey` heade
 - The three text fields are rich-text on the form, but HTML sent through the API is stored **as literal text** (`<p>…</p>` shows on screen) — send plain text.
 - `Description: ""` on `QW_Update_Object` clears the description (read back empty).
 - Read back with `QW_Get_Item_Add_Edit` (`Item_id` = the item) → `field[].OldValue`.
+
+## Live: a type not allowed under a parent (orca60, 2026-11-12)
+`QW_Add_Object` with `Object_Type: "Action Item"`, `Parent_ID: <SCAR id>`, `Insert_to_Pool: "N"` →
+`IsSuccess:false` *"Constraint limitation: The object type you specified ('Action Item') cannot added under the selected
+parent."* — the project's structure rules decide which type may sit under which (admin setting), same message as a User
+Requirement under the wrong parent. `Object_Type` must be the **label**: `"ACTION_ITEM"` (the code) → *"Object type could not
+be found"*. Without `Parent_ID` (pool) the same body succeeds.
+✅ **After the admin allowed Action Item under SCAR** (same day), the same body created ACTION_ITEM-27501 and
+`Get_Children/27499?Ver_Id=422` read it back as the SCAR's child. So `QW_Add_Object` + `Parent_ID` DOES create under a
+parent once the structure allows the pair (unlike `QW_Update_Object` + `Parent_ID`, which never moves an item — Note #118).

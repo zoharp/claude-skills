@@ -291,7 +291,16 @@ Must-haves — a combo that misses any of these is a bug:
    the active row lavender (`#F0EBFA`); long labels WRAP inside the list (never cut).
    **The input itself must be `width: 100%`** of its picker, and the picker `width: 100%; min-width: 0`
    of its column — unset, the input keeps its intrinsic ~280px while the absolutely placed ▾ sits at
-   the column's far edge, floating outside the box (Doc Import "Set a field", 2026-10-27).
+   the column's far edge, floating outside the box (Doc Import "Set a field", 2026-10-27; AGAIN in
+   Supplier Portal settings → *Work item type*, 2026-11-13 — the user's 3rd+ report).
+   **Fix it in the COMPONENT, never per page:** since 2026-11-13 `styles/DocReview.css` makes
+   `.drv-combo` `width: 100%` and `.drv-combo .drv-combo-input` `width: 100%; box-sizing: border-box;
+   padding-inline-end: 30px` for EVERY SearchSelect. A page sizes the **slot** (`.drv-picker` /
+   its column), never the input, and never overrides the input width back to auto.
+   **Width caps:** a combo is as wide as its longest typical label + the ▾, not as wide as the screen.
+   In a flex row of controls give the slot `flex: 1 1 280px; max-width: 420px` — a 900px combo with
+   short text and the ▾ at the far end reads as broken even when the ▾ is technically inside.
+   **The ▾ is 10–12px from the box's right edge, always inside the border.** Check with a screenshot.
    **Page standard (traceability-matrix Doc Import, 2026-10-27 — copy it for any page):** one block,
    last in the page's stylesheet and scoped to the page root so it beats per-section rules, styling
    BOTH `select` and `.drv-combo-input` the same:
@@ -321,7 +330,9 @@ Reference implementation (traceability-matrix): `SearchSelect` in
 (options `{value, label, strong}`, CSS in `styles/DocReview.css`). Reuse it; don't write another.
 
 Before calling a screen done, open every combo on it — including ones inside tables, value-map
-rows and modals — near the bottom of the window, and confirm the whole list is readable.
+rows and modals — near the bottom of the window, and confirm the whole list is readable. And look
+at it CLOSED: the text and the ▾ are in one box, the ▾ right next to the box's right edge, the box
+no wider than ~420px in a form row.
 
 ---
 

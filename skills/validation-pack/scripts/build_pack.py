@@ -191,7 +191,7 @@ code{font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;background:
 .risk-High,.st-Fail,.p11-Gap{background:var(--fail-soft);color:var(--fail)}
 .risk-Medium,.st-Blocked,.p11-Partial{background:var(--warn-soft);color:var(--warn)}
 .risk-Low,.st-Pass,.p11-Met{background:var(--pass-soft);color:var(--pass)}
-.st-Notrun,.p11-NA,.p11-Base{background:var(--surface-2);color:var(--muted)}
+.st-Notrun,.p11-NA,.p11-Base,.p11-Org{background:var(--surface-2);color:var(--muted)}
 .card{border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin:14px 0}
 .card h3{margin-top:0}
 .kv{display:grid;grid-template-columns:140px 1fr;gap:2px 12px;margin:6px 0}
@@ -342,6 +342,24 @@ def doc_vp(pack, ix):
             out += ["<h3>How AI functions are validated</h3>", f"<p>{esc(ai['validation'])}</p>"]
         if ai.get("gaps"):
             out += ["<h3>Open items</h3>", ulist(ai["gaps"])]
+
+    iso = c.get("iso42001")
+    if iso:
+        out.append(f"<h2>{n}. ISO/IEC 42001 — Annex A controls</h2>")
+        n += 1
+        out.append(f"<p>{esc(iso.get('intro', ''))}</p>")
+        counts = {}
+        for r in iso["rows"]:
+            counts[r["status"]] = counts.get(r["status"], 0) + 1
+        out.append('<p>' + " ".join(f'{pill(s, "p11-")} {k}' for s, k in sorted(counts.items())) + '</p>')
+        out.append(table(["Control", "Title", "How the add-on supports it", "Evidence", "Status"],
+                         [[f'<span class="id">{esc(r["control"])}</span>', esc(r["title"]), esc(r["how"]),
+                           esc(r.get("evidence", "")), pill(r["status"], "p11-")]
+                          for r in iso["rows"]], raw=True))
+        if iso.get("legend"):
+            out.append(f'<p class="muted">{esc(iso["legend"])}</p>')
+        if iso.get("gaps"):
+            out += ["<h3>Open items</h3>", ulist(iso["gaps"])]
 
     sec = c.get("security")
     if sec:

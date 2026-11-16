@@ -366,6 +366,9 @@ not launched⟺  DMS_Routing_State == "Draft"      (template — exclude)
 dead        ⟺  DMS_Routing_State == "Cancel"     (not a live obligation)
 ```
 
+The full routing-state list (incl. `Pending Approved`, `Reject`, `Obsolete`) and what each means for a
+DMS document: `orcanos-document-control-process.md`.
+
 ### 🚨 Trap 4 — a signed task can be invisible to the report
 
 Live reconciliation of all **59** signed tasks against the computed matrix:

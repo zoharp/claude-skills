@@ -277,6 +277,25 @@ function itemUrl(baseUrl, versionId, type, itemId) {
 
 ---
 
+## Building a tree from a filter — parent column + *Treeview order* sort
+
+A filter can return a containment tree (DMS Workspace → DMS Folder → …, BOM parts, document paragraphs) without
+`Get_Children` on every node. Each row carries ONE of two parent columns. Read whichever the filter selects:
+
+| Column (`Name` / `Title`) | Value | Resolve it by |
+|---|---|---|
+| `Parent_name` / *Parent Name* | `PROJECT-10045: Document Control`, `WrkSpc-20439: Archive #2`, `FOLDER-12518: …`: prefix + ID + name | the ID in the text (the type is in the prefix) |
+| `Parent_original_id` / *Parent Original Id* | a bare number with no type, e.g. `26589` | the **project id** means top level. Otherwise match it to another row's **`Original_id`**, never its `ID`: a branched item has another ID per version (verified live, orca60 filter 735, 2026-11-13) |
+
+A parent that no read returned (another item type) becomes a placeholder node, so its children stay grouped.
+
+**Sort order: *Treeview order*.** A filter's **Sort** settings in Orcanos have a **Treeview order** option. With it,
+rows come back in the product tree's own order, the order users see in Orcanos (user, 2026-11-13). A client that
+draws a tree must **keep the API's row order** and never re-sort by name or key. Siblings then appear exactly as in
+Orcanos. If an admin wants that order, they set *Treeview order* on the filter itself. It is not sent in
+`Order_By` (how *Treeview order* maps to `Order_By` is unknown and untested). traceability-matrix Document Control
+keeps filter order for both folders and documents (`doc_control_api._tree_raw`, `_place_docs`, the items route).
+
 ## Filter_By — SQL WHERE clauses
 
 `Filter_By` is a SQL WHERE fragment appended to the filter's existing WHERE. Supports standard SQL operators.
@@ -414,6 +433,8 @@ async function fetchItems({
 ---
 
 ## See also
+- [Work Item List Automation](../Orcanos-infra/orcanos-work-item-list-automation.md) — a list field based on work items comes back as its **shown text** (e.g. `25937-Test supplier`), never the stored item ID
+- [../Orcanos-infra/orcanos-smart-description.md](../Orcanos-infra/orcanos-smart-description.md) — a Description column may hold a smart **template** (`FIELD_` / `FILTER_` anchors), not text
 - [Main Skill](SKILL.md) — Base URL, auth, common patterns
 - **[Filter-result fields](filter-result-fields.md)** — the full `Field[]` dictionary: what every returned column means, per-field `Text` semantics, the `Order` / `Web_order` traps, and the item envelope (`Type` / `Version` / `Freeze` / `Allow_edit`)
 - [QW_Login](qw-login.md) — Authenticate and fetch projects/versions

@@ -75,7 +75,9 @@ clause list), `module.template.json`, `conftest.template.py`, `pytest.ini`, `con
    product listed**, the ones not yet written as `"status": "planned"`.
 4. Fill `compliance`: Part 11 (assess every clause: Base / Met / Partial / Gap / NA), AI (each AI
    function: data sent, human control; plus how AI is validated — the *controls*, not the content),
-   security (summary + known gaps, pointing at the project's security doc), data integrity (ALCOA+).
+   security (summary + known gaps, pointing at the project's security doc), data integrity (ALCOA+), and — for a product
+   with AI — `iso42001` (every Annex A control: Met / Partial / Gap / Org / NA, with URS + VT evidence; `Org` = the
+   company's own AI management system, never claimed by the product; say "supports", never "certified").
 5. `python <skill>/scripts/build_pack.py --pack validation/pack.json` and open `docs/VP.html`.
 
 ### B. Add a module section or requirements

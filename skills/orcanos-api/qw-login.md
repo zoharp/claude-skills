@@ -352,6 +352,16 @@ UI hiding the button is never the control. See the app's Critical Note #20.
 
 ---
 
+## ⚠️ Shapes that broke the add-on silently (live, 2026-11-15 — traceability Note #135)
+
+- **`Version` is a LIST** on a project with several versions (XML→JSON, like every repeated element). Reduce it to
+  one value before storing — binding the list made SQLite refuse the whole project cache on every login for 2½ weeks.
+- **`Idle_time` can be `"0"`**, empty or non-numeric (seen on one tenant). Treat it as "unknown" and use a default
+  (the add-on: 45 min) — never `expiry = now + 0`.
+- **An e-mail as the user name** signs in fine here, but later calls that re-send the credential
+  (`QW_Get_Section_Data` …) answer *User or password is not valid*. Build the stored credential on the
+  **`User_name`** this call returns, not on what the person typed.
+
 ## Failure Responses
 
 | HTTP | Condition | Fix |

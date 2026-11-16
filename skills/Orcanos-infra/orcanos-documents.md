@@ -94,6 +94,26 @@ enriched (Key, Type, Name, Status, Description HTML, ItemURL). Full contract and
    Orcanos renders in place) — show a marker, don't flatten it to prose.
 7. Cost: a 300-item document is ~300 calls. Cache per document per build; never walk on every view.
 
+## 4a. Opening a document in Orcanos — the PRODUCT TREE link
+
+A `DOC` (structured document — **not** a `DMS` item) is opened in Orcanos's **product tree**, which
+shows the document in its project / folder tree with its outline beside the form:
+
+```
+{base}/web/{Ver_id}/tree?ItemId={DOC id}
+https://app.orcanos.com/orca60/web/332/tree?ItemId=8467
+```
+
+- 📌 Product owner, 2026-11-10. The item URL (`/web/{ver}/QPackItems/view?Item=DOC&ItemId=…`, or
+  `GetItemURL` / `Get_Children`'s `ItemURL` `…/items/view…`) opens only the DOC's **item form** — use
+  it for paragraphs and items, never for the DOC link.
+- Take `Ver_id` and `ItemId` from the DOC's own item URL (same pair), so the rewrite is
+  `…/web/{ver}/<anything>/view?…ItemId={id}` → `…/web/{ver}/tree?ItemId={id}`. Used in
+  traceability-matrix `dhf_api.doc_tree_url` (DHF document card, document view, branches).
+- ❓ Not yet checked live which pair a **branched** DOC needs (original `8467` in its original version,
+  as in the example, vs. the version's `ID` `16278` in `434`) — confirm on the first click.
+- `DMS` items keep the item URL (`/QPackItems/view?Item=DMS…`) — a DMS item is not in the product tree.
+
 ## 5. Status — "is this item done?"
 
 An item's `Status` is a label. Whether it counts as done comes from its type's **status system
@@ -122,10 +142,17 @@ Mark every one of these unverified in code until a live call has succeeded.
 - [ ] DOC root type and paragraph types read from the tenant, not hard-coded.
 - [ ] Recursion uses child `Ver_Id`, a `visited` set, and a depth cap.
 - [ ] Done = `IsActive ∧ IsComplete` from the status table, per type.
-- [ ] Keys link to `ItemURL`.
+- [ ] Keys link to `ItemURL`; the **DOC** links to the product tree (`/web/{ver}/tree?ItemId=`, §4a).
+- [ ] A tree read from a FILTER keeps the filter's row order (sort = **Treeview order** in Orcanos) and accepts either
+      parent column: Parent Name or Parent Original Id (`orcanos-api/qw-get-filter-results.md` → *Building a tree from a filter*).
 
 ## See also
 - `orcanos-work-items.md` — the item catalogue and identifier traps
 - `orcanos-api/get-children.md` — the call
+- `orcanos-supplier.md` — another parent → child use: Action Items under a SCAR (same open "create under a parent" question, §6)
 - `orcanos-api/get-item-statuses.md` — the status flags
 - `orcanos-api/qw-get-filter-results.md` — reading `Root_Document` from a filter
+- `orcanos-api/my-tasks-and-esign.md` — whose row is it (Assigned to / next signee) and signing a DMS or training task via `/web/async/signdocument` (2026-11-12)
+
+---
+**See also:** `Orcanos-infra/orcanos-version-management.md` (Views, branching, item version labels) and `Orcanos-infra/orcanos-database.md` (why `ID` ≠ `Original_id`: `objects` / `objects_ver_view`).

@@ -170,3 +170,14 @@ first live write.
 - [QW_Add_Object](qw-add-item.md) — Create a work item (sibling create endpoint)
 - [QW_Update_Defect](qw-update-defect.md) — Defects are a separate table: use this, not QW_Update_Object
 - [QW_Login](qw-login.md) — Session/auth prerequisite
+
+- **Status writes ignore the workflow (live orca60, 2026-11-12, SCAR-27499, version 422).** `Status` with the label went
+  New → *Sent to supplier* → **Closed** → *Containment submitted*, every step `IsSuccess: true` and read back on
+  `QW_Get_Object_View` (`Obj_status` Text/Code). The API does NOT enforce the allowed next states the form offers, and no
+  e-signature was asked for that type. So an app that writes a status must enforce its own order. (A type whose workflow
+  needs an e-sign on a state was not tested.)
+- **Supplier item writes (Supplier Portal Phase 3, traceability-matrix `supplier_portal_certs.write_supplier`, 2026-11-13):** a
+  certificate renewal / profile change accepted by quality writes the Supplier item's mapped fields by TITLE (custom =
+  `CSk_Name` / `CSk_value`, dates sent as `YYYY-MM-DD`) as the portal's service user, then reads them back with
+  `QW_Get_Item_Add_Edit`. **Unverified live** (fakes only): a date field on the Supplier form written as ISO, and a Supplier write
+  by a service user holding U on SUPLR.

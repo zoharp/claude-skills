@@ -20,12 +20,15 @@ created, who signs, and where the records land.
 | File | Process | Status |
 |---|---|---|
 | `orcanos-training-process.md` | **Training Management** — Read & Understand automation, formal/manual training, launch paths, evidence | Written from customer-facing decks |
+| `orcanos-supplier-process.md` | **Supplier Management** — ISO 13485 §7.4: approval, periodic review (Last Reviewed Date + interval), SCAR lifecycle (NCR → SCAR → Action Items → effectiveness → optional CAPA), certificate expiry; maps onto `Orcanos-infra/orcanos-supplier.md` | Live orca60 forms (2026-11-12) + Supplier Portal design D1–D18 |
+| `orcanos-document-control-process.md` | **Document Control (DMS)** — Routing State is THE state (Status unused): Draft · In Work · Approved · Pending Approved (signed, waiting for its ECO) · Obsolete · Cancel · Reject; revisions, ECO columns per revision, the Training section (hide Training List, show Roles + Trainees), Doc Review | Product owner 2026-11-13 + live orca60 |
+| `orcanos-version-management-process.md` | **Version / baseline management** — open / freeze / lock versions, Branch vs Save, planning 1.x beside 2.0 (KB's 4 use cases), Move to View, Cancel Branch; roles + admin screens | KB *Version (Baseline) Management* (2026-11-15) |
 | `orcanos-risk-process.md` | **Risk Management** — ISO 14971 / FMEA as Orcanos runs it: the Risk item's fields and codes, FMEA settings and the four calculation shapes (P×S table, P hazard × P harm = P total, S×P×D, same severity), mitigation → test → run, Excel import rules | KB *FMEA Settings* + live orca60 + product owner |
 
 ## Planned
 
-`document-control-process.md` · `capa-process.md` · `complaint-process.md` ·
-`change-control-process.md` · `audit-process.md` · `supplier-process.md`
+`capa-process.md` · `complaint-process.md` ·
+`change-control-process.md` · `audit-process.md`
 
 ---
 
